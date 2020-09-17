@@ -1,6 +1,6 @@
-package com.example.ldap;
+package no.shhsoft.ldap;
 
-import com.example.Utils;
+import no.shhsoft.utils.ExceptionUtils;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.BindMode;
@@ -15,6 +15,9 @@ import javax.naming.ldap.LdapContext;
 
 import static org.junit.Assert.*;
 
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public final class LdapUtilsIntegrationTest {
 
     private static final boolean USE_LDAPS = false;
@@ -32,12 +35,12 @@ public final class LdapUtilsIntegrationTest {
      * dn: cn=admin,{{ LDAP_BASE_DN }} */
     @ClassRule
     public static GenericContainer<?> ldapContainer = new GenericContainer<>(DockerImageName.parse("osixia/openldap:1.4.0"))
-                                                      .withClasspathResourceMapping("/ldap/shhsoft.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif", BindMode.READ_ONLY)
-                                                      .withCommand("--copy-service")
-                                                      .withEnv("LDAP_DOMAIN", LDAP_DOMAIN)
-                                                      .withEnv("LDAP_BASE_DN", LDAP_BASE_DN)
-                                                      .withEnv("LDAP_ADMIN_PASSWORD", LDAP_ADMIN_PASSWORD)
-                                                      .withExposedPorts(389, 636);
+        .withClasspathResourceMapping("/ldap/bootstrap.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif", BindMode.READ_ONLY)
+        .withCommand("--copy-service")
+        .withEnv("LDAP_DOMAIN", LDAP_DOMAIN)
+        .withEnv("LDAP_BASE_DN", LDAP_BASE_DN)
+        .withEnv("LDAP_ADMIN_PASSWORD", LDAP_ADMIN_PASSWORD)
+        .withExposedPorts(389, 636);
 
     private LdapContext getLdap() {
         final LdapConnector ldapConnector = new LdapConnector(ldapContainer.getHost(), ldapContainer.getMappedPort(USE_LDAPS ? 636 : 389), USE_LDAPS, LDAP_ADMIN_DN, LDAP_ADMIN_PASSWORD, LDAP_BASE_DN);
@@ -48,12 +51,12 @@ public final class LdapUtilsIntegrationTest {
         try {
             LdapUtils.remove(ldap, NON_EXISTING_RDN);
         } catch (final UncheckedNamingException e) {
-            assertTrue(Utils.containsCause(e, NameNotFoundException.class));
+            assertTrue(ExceptionUtils.containsCause(e, NameNotFoundException.class));
         }
         try {
             LdapUtils.remove(ldap, NON_EXISTING_SUBTREE);
         } catch (final UncheckedNamingException e) {
-            assertTrue(Utils.containsCause(e, NameNotFoundException.class));
+            assertTrue(ExceptionUtils.containsCause(e, NameNotFoundException.class));
         }
         assertNull(LdapUtils.findByRdn(ldap, NON_EXISTING_RDN));
     }

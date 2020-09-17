@@ -1,10 +1,13 @@
-package com.example.ldap;
+package no.shhsoft.ldap;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public final class LdapUtilsTest {
 
     @Test

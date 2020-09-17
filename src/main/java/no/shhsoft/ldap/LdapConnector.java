@@ -1,7 +1,10 @@
-package com.example.ldap;
+package no.shhsoft.ldap;
 
 import javax.naming.ldap.LdapContext;
 
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public final class LdapConnector {
 
     private final String server;

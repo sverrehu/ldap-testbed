@@ -1,6 +1,6 @@
-package com.example.ldap;
+package no.shhsoft.ldap;
 
-import com.example.Utils;
+import no.shhsoft.utils.StringUtils;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -12,6 +12,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
 public final class LdapUtils {
 
     private static final String DEFAULT_GROUP_MEMBER_ATTRIBUTE_NAME = "member";
@@ -49,8 +52,8 @@ public final class LdapUtils {
             env.put("com.sun.jndi.ldap.connect.pool.timeout", "600000");
         }
         env.put(Context.PROVIDER_URL, url);
-        if (!Utils.isBlank(userDn)) {
-            if (Utils.isBlank(password)) {
+        if (!StringUtils.isBlank(userDn)) {
+            if (StringUtils.isBlank(password)) {
                 /* We need to stop this here, since some LDAP servers treat a blank password as an
                  * anonymous login, even if a userDn is provided. Stupid shit, particularly when the
                  * connect thing is the only way to perform LDAP authentication. */

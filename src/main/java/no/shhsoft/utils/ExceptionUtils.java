@@ -1,12 +1,11 @@
-package com.example;
+package no.shhsoft.utils;
 
-public final class Utils {
+/**
+ * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
+ */
+public final class ExceptionUtils {
 
-    private Utils() {
-    }
-
-    public static boolean isBlank(final String s) {
-        return s == null || s.trim().length() == 0;
+    private ExceptionUtils() {
     }
 
     public static boolean containsCause(final Throwable t, final Class<? extends Throwable> cause) {
