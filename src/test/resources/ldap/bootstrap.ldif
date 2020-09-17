@@ -1,10 +1,10 @@
 version: 1
-dn: ou=People,dc=shhsoft,dc=no
+dn: ou=People,{{ LDAP_BASE_DN }}
 objectClass: top
 objectClass: organizationalUnit
 ou: People
 
-dn: cn=John Doe,ou=People,dc=shhsoft,dc=no
+dn: cn=John Doe,ou=People,{{ LDAP_BASE_DN }}
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
 objectClass: person
@@ -14,7 +14,7 @@ sn: Doe
 telexNumber: asd456
 uid: jd
 
-dn: cn=sverre,ou=People,dc=shhsoft,dc=no
+dn: cn=sverre,ou=People,{{ LDAP_BASE_DN }}
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
 objectClass: person
@@ -27,16 +27,16 @@ telexNumber: abc123
 uid: sverrehu
 userPassword: secret
 
-dn: ou=Groups,dc=shhsoft,dc=no
+dn: ou=Groups,{{ LDAP_BASE_DN }}
 objectClass: organizationalUnit
 objectClass: top
 ou: Groups
 
-dn: cn=Group1,ou=Groups,dc=shhsoft,dc=no
+dn: cn=Group1,ou=Groups,{{ LDAP_BASE_DN }}
 objectClass: groupOfNames
 objectClass: top
 cn: Group1
 member: uid=sverrehu
 member: uid=jd
-member: cn=sverre,ou=People,dc=shhsoft,dc=no
+member: cn=sverre,ou=People,{{ LDAP_BASE_DN }}
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
  */
 public final class LdapUtilsIntegrationTest {
 
-    private static final boolean USE_LDAPS = false;
+    private static final boolean USE_LDAPS = true;
     private static final String LDAP_DOMAIN = "shhsoft.no";
     private static final String LDAP_BASE_DN = "dc=shhsoft,dc=no";
     private static final String LDAP_ADMIN_DN = "cn=admin," + LDAP_BASE_DN;
@@ -40,6 +40,7 @@ public final class LdapUtilsIntegrationTest {
         .withEnv("LDAP_DOMAIN", LDAP_DOMAIN)
         .withEnv("LDAP_BASE_DN", LDAP_BASE_DN)
         .withEnv("LDAP_ADMIN_PASSWORD", LDAP_ADMIN_PASSWORD)
+        .withEnv("LDAP_TLS_VERIFY_CLIENT", "never")
         .withExposedPorts(389, 636);
 
     private LdapContext getLdap() {
