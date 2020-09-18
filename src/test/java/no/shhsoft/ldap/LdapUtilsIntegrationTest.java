@@ -36,12 +36,12 @@ public final class LdapUtilsIntegrationTest {
     @ClassRule
     public static GenericContainer<?> ldapContainer = new GenericContainer<>(DockerImageName.parse("osixia/openldap:1.4.0"))
         .withClasspathResourceMapping("/ldap/bootstrap.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif", BindMode.READ_ONLY)
-        .withCommand("--copy-service")
         .withEnv("LDAP_DOMAIN", LDAP_DOMAIN)
         .withEnv("LDAP_BASE_DN", LDAP_BASE_DN)
         .withEnv("LDAP_ADMIN_PASSWORD", LDAP_ADMIN_PASSWORD)
         .withEnv("LDAP_TLS_VERIFY_CLIENT", "never")
-        .withExposedPorts(389, 636);
+        .withExposedPorts(389, 636)
+        .withCommand("--copy-service");
 
     private LdapContext getLdap() {
         final LdapConnector ldapConnector = new LdapConnector(ldapContainer.getHost(), ldapContainer.getMappedPort(USE_LDAPS ? 636 : 389), USE_LDAPS, LDAP_ADMIN_DN, LDAP_ADMIN_PASSWORD, LDAP_BASE_DN);
