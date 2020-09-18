@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
  */
 public final class LdapUtilsIntegrationTest {
 
-    private static final boolean USE_LDAPS = true;
+    private static final boolean USE_LDAPS = false;
     private static final String LDAP_DOMAIN = "shhsoft.no";
     private static final String LDAP_BASE_DN = "dc=shhsoft,dc=no";
     private static final String LDAP_ADMIN_DN = "cn=admin," + LDAP_BASE_DN;
