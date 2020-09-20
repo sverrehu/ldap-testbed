@@ -14,7 +14,7 @@ sn: Doe
 telexNumber: asd456
 uid: jd
 
-dn: cn=sverre,ou=People,{{ LDAP_BASE_DN }}
+dn: cn=sverrehu,ou=People,{{ LDAP_BASE_DN }}
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
 objectClass: person
@@ -25,7 +25,7 @@ description: Sverre H.
   Huseby
 telexNumber: abc123
 uid: sverrehu
-userPassword: secret
+userPassword: {SSHA}Vv7mSEzM74BvtLiErS7RzF/vsSWPpGzB
 
 dn: ou=Groups,{{ LDAP_BASE_DN }}
 objectClass: organizationalUnit
