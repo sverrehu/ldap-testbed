@@ -33,11 +33,11 @@ public final class LdapAuthenticatorIntegrationTest {
     public void shouldDenyEmptyUserDnOrPassword() {
         final LdapAuthenticator authenticator = getAuthenticator();
         assertFalse(authenticator.authenticateByDn(LdapContainerUtils.LDAP_ADMIN_DN, null));
-        assertFalse(authenticator.authenticateByDn(LdapContainerUtils.LDAP_ADMIN_DN, ""));
+        assertFalse(authenticator.authenticateByDn(LdapContainerUtils.LDAP_ADMIN_DN, "".toCharArray()));
         assertFalse(authenticator.authenticateByDn(null, LdapContainerUtils.LDAP_ADMIN_PASSWORD));
         assertFalse(authenticator.authenticateByDn("", LdapContainerUtils.LDAP_ADMIN_PASSWORD));
         assertFalse(authenticator.authenticateByDn(null, null));
-        assertFalse(authenticator.authenticateByDn("", ""));
+        assertFalse(authenticator.authenticateByDn("", "".toCharArray()));
     }
 
     private LdapAuthenticator getAuthenticator() {

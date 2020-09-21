@@ -27,19 +27,19 @@ public final class LdapAuthenticator {
         this.userNameToDnFormat = Validate.notNull(userNameToDnFormat);
     }
 
-    public boolean authenticateByUserName(final String userName, final String password) {
-        if (StringUtils.isBlank(userName) || StringUtils.isBlank(password)) {
+    public boolean authenticateByUserName(final String userName, final char[] password) {
+        if (StringUtils.isBlank(userName)) {
             return false;
         }
         final String userDn = String.format(userNameToDnFormat, LdapUtils.escape(userName));
         return authenticateByDn(userDn, password);
     }
 
-    public boolean authenticateByDn(final String userDn, final String password) {
-        if (StringUtils.isBlank(userDn) || StringUtils.isBlank(password)) {
+    public boolean authenticateByDn(final String userDn, final char[] password) {
+        if (StringUtils.isBlank(userDn) || password == null || password.length == 0) {
             return false;
         }
-        final Hashtable<String, String> env = new Hashtable<>();
+        final Hashtable<String, Object> env = new Hashtable<>();
         /* As per https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/pool.html,
          * not using connection pooling, since we change the principal of the connection. */
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");

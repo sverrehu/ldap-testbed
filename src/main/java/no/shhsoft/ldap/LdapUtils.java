@@ -1,13 +1,5 @@
 package no.shhsoft.ldap;
 
-import no.shhsoft.utils.StringUtils;
-
-import javax.naming.Context;
-import javax.naming.NamingException;
-import javax.naming.ldap.InitialLdapContext;
-import javax.naming.ldap.LdapContext;
-import java.util.Hashtable;
-
 /**
  * NOTE: Heavily trimmed version of Sverre's original utility.
  *
@@ -18,34 +10,6 @@ public final class LdapUtils {
     private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
     private LdapUtils() {
-    }
-
-    public static LdapContext connect(final String url, final String userDn, final String password, final boolean usePooling) {
-        final Hashtable<String, String> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        if (usePooling) {
-            env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.pool.timeout", "600000");
-        }
-        env.put(Context.PROVIDER_URL, url);
-        if (!StringUtils.isBlank(userDn)) {
-            if (StringUtils.isBlank(password)) {
-                /* We need to stop this here, since some LDAP servers treat a blank password as an
-                 * anonymous login, even if a userDn is provided. Stupid shit, particularly when the
-                 * connect thing is the only way to perform LDAP authentication. */
-                throw new IllegalArgumentException("Empty password not allowed.");
-            }
-            env.put(Context.SECURITY_AUTHENTICATION, "simple");
-            env.put(Context.SECURITY_PRINCIPAL, userDn);
-            env.put(Context.SECURITY_CREDENTIALS, password);
-        } else {
-            env.put(Context.SECURITY_AUTHENTICATION, "none");
-        }
-        try {
-            return new InitialLdapContext(env, null);
-        } catch (final NamingException e) {
-            throw new UncheckedNamingException(e);
-        }
     }
 
     public static String escape(final String s) {
