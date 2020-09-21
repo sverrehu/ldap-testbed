@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 public final class LdapAuthenticatorIntegrationTest {
 
     @ClassRule
-    public static GenericContainer<?> ldapContainer = LdapContainerUtils.createContainer();
+    public static final GenericContainer<?> ldapContainer = LdapContainerUtils.createContainer();
 
 
     @Test

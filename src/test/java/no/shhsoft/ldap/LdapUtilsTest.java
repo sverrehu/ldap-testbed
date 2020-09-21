@@ -3,25 +3,12 @@ package no.shhsoft.ldap;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
 public final class LdapUtilsTest {
-
-    @Test
-    public void testIsBelow() {
-        assertTrue(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "o=d"));
-        assertTrue(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "ou=c, o=d"));
-        assertTrue(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "ou=b, ou=c, o=d"));
-        assertTrue(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "cn=a, ou=b, ou=c, o=d"));
-
-        assertFalse(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "o=e"));
-        assertFalse(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "ou=e, o=d"));
-        assertFalse(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "ou=e, ou=c, o=d"));
-        assertFalse(LdapUtils.isBelow("cn=a,ou=b,ou=c,o=d", "cn=e, ou=b, ou=c, o=d"));
-    }
 
     @Test
     public void testEscape1() {
