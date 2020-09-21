@@ -20,10 +20,10 @@ public final class LdapAuthenticateCallbackHandler
 implements AuthenticateCallbackHandler {
 
     private static final Logger LOG = Logger.getLogger(LdapAuthenticateCallbackHandler.class.getName());
-    private static final String CONFIG_LDAP_HOST = "ldap.username.host";
-    private static final String CONFIG_LDAP_PORT = "ldap.username.port";
-    private static final String CONFIG_LDAP_USERNAME_TO_DN_FORMAT = "ldap.username.to.dn.format";
+    private static final String CONFIG_LDAP_HOST = "ldap.host";
+    private static final String CONFIG_LDAP_PORT = "ldap.port";
     private static final String CONFIG_LDAP_BASE_DN = "ldap.base.dn";
+    private static final String CONFIG_LDAP_USERNAME_TO_DN_FORMAT = "ldap.username.to.dn.format";
     private static final String SASL_PLAIN = "PLAIN";
     private LdapAuthenticator authenticator;
 
