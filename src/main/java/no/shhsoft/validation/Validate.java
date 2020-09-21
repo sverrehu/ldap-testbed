@@ -18,8 +18,7 @@ public final class Validate {
     }
 
     public static <T> T notNull(final T o) {
-        notNull(o, "Object must not be null");
-        return o;
+        return notNull(o, "Object must not be null");
     }
 
 }

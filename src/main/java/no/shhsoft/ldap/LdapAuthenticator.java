@@ -19,11 +19,11 @@ public final class LdapAuthenticator {
 
     private static final Logger LOG = Logger.getLogger(LdapAuthenticator.class.getName());
 
-    private final LdapConnector ldap;
+    private final LdapConnectionSpec ldapConnectionSpec;
     private final String userNameToDnFormat;
 
-    public LdapAuthenticator(final LdapConnector ldap, final String userNameToDnFormat) {
-        this.ldap = Validate.notNull(ldap);
+    public LdapAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String userNameToDnFormat) {
+        this.ldapConnectionSpec = Validate.notNull(ldapConnectionSpec);
         this.userNameToDnFormat = Validate.notNull(userNameToDnFormat);
     }
 
@@ -43,7 +43,7 @@ public final class LdapAuthenticator {
         /* As per https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/pool.html,
          * not using connection pooling, since we change the principal of the connection. */
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, ldap.getUrl());
+        env.put(Context.PROVIDER_URL, ldapConnectionSpec.getUrl());
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, userDn);
         env.put(Context.SECURITY_CREDENTIALS, password);
@@ -61,7 +61,7 @@ public final class LdapAuthenticator {
                 try {
                     context.close();
                 } catch (final NamingException e) {
-                    LOG.log(Level.WARNING, "Got exception closing LDAP context. Ignoring.", e);
+                    LOG.log(Level.WARNING, "Ignoring exception when closing LDAP context.", e);
                 }
             }
         }

@@ -40,13 +40,13 @@ public final class LdapUtilsTest {
         assertEquals("foo\\+\\\"\\<\\>\\;", LdapUtils.escape("foo+\"<>;"));
     }
 
-    @Ignore("As of 2007-04-24, no longer escaping high unprintables.")
+    @Ignore("As of 2007-04-24, no longer escaping high control characters.")
     @Test
     public void xtestEscape7() {
         assertEquals("foo\\7f", LdapUtils.escape("foo\u007f"));
     }
 
-    @Ignore("As of 2007-04-24, no longer escaping high unprintables.")
+    @Ignore("As of 2007-04-24, no longer escaping high control characters.")
     @Test
     public void xtestEscape8() {
         assertEquals("foo\\c4\\8d", LdapUtils.escape("foo\uc48d"));

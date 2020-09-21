@@ -15,7 +15,6 @@ public final class LdapAuthenticatorIntegrationTest {
     @ClassRule
     public static final GenericContainer<?> ldapContainer = LdapContainerUtils.createContainer();
 
-
     @Test
     public void shouldAcceptValidUserDnAndPassword() {
         final LdapAuthenticator authenticator = getAuthenticator();
@@ -41,7 +40,7 @@ public final class LdapAuthenticatorIntegrationTest {
     }
 
     private LdapAuthenticator getAuthenticator() {
-        return new LdapAuthenticator(LdapContainerUtils.getLdapConnector(ldapContainer), LdapContainerUtils.USER_NAME_TO_DN_FORMAT);
+        return new LdapAuthenticator(LdapContainerUtils.getLdapConnectionSpec(ldapContainer), LdapContainerUtils.USER_NAME_TO_DN_FORMAT);
     }
 
 }

@@ -36,8 +36,8 @@ final class LdapContainerUtils {
                .withCommand("--copy-service");
     }
 
-    static LdapConnector getLdapConnector(final GenericContainer<?> ldapContainer) {
-        return new LdapConnector(ldapContainer.getHost(), ldapContainer.getMappedPort(LdapContainerUtils.USE_LDAPS ? 636 : 389), USE_LDAPS, LDAP_BASE_DN);
+    static LdapConnectionSpec getLdapConnectionSpec(final GenericContainer<?> ldapContainer) {
+        return new LdapConnectionSpec(ldapContainer.getHost(), ldapContainer.getMappedPort(LdapContainerUtils.USE_LDAPS ? 636 : 389), USE_LDAPS, LDAP_BASE_DN);
     }
 
 }

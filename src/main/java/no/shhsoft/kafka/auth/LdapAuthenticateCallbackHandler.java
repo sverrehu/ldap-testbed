@@ -1,7 +1,7 @@
 package no.shhsoft.kafka.auth;
 
 import no.shhsoft.ldap.LdapAuthenticator;
-import no.shhsoft.ldap.LdapConnector;
+import no.shhsoft.ldap.LdapConnectionSpec;
 import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.apache.kafka.common.security.plain.PlainAuthenticateCallback;
 
@@ -40,7 +40,7 @@ implements AuthenticateCallbackHandler {
         final int port = getRequiredIntProperty(configs, CONFIG_LDAP_PORT);
         final String baseDn = getRequiredStringProperty(configs, CONFIG_LDAP_BASE_DN);
         final String userNameToDnFormat = getRequiredStringProperty(configs, CONFIG_LDAP_USERNAME_TO_DN_FORMAT);
-        authenticator = new LdapAuthenticator(new LdapConnector(host, port, port == 636, baseDn), userNameToDnFormat);
+        authenticator = new LdapAuthenticator(new LdapConnectionSpec(host, port, port == 636, baseDn), userNameToDnFormat);
         LOG.info("Configured.");
     }
 
