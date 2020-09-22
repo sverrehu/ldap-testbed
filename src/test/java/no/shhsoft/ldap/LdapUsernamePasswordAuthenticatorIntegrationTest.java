@@ -10,27 +10,27 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class LdapAuthenticatorIntegrationTest {
+public final class LdapUsernamePasswordAuthenticatorIntegrationTest {
 
     @ClassRule
-    public static final GenericContainer<?> ldapContainer = LdapContainerUtils.createContainer();
+    public static final GenericContainer<?> LDAP_CONTAINER = LdapContainerUtils.createContainer();
 
     @Test
     public void shouldAcceptValidUserDnAndPassword() {
-        final LdapAuthenticator authenticator = getAuthenticator();
+        final LdapUsernamePasswordAuthenticator authenticator = getAuthenticator();
         assertTrue(authenticator.authenticateByDn(LdapContainerUtils.LDAP_ADMIN_DN, LdapContainerUtils.LDAP_ADMIN_PASSWORD));
         assertTrue(authenticator.authenticateByDn(LdapContainerUtils.EXISTING_RDN + "," + LdapContainerUtils.LDAP_BASE_DN, LdapContainerUtils.EXISTING_USER_PASSWORD));
     }
 
     @Test
-    public void shouldAcceptValidUserNameAndPassword() {
-        final LdapAuthenticator authenticator = getAuthenticator();
-        assertTrue(authenticator.authenticateByUserName(LdapContainerUtils.EXISTING_USER_NAME, LdapContainerUtils.EXISTING_USER_PASSWORD));
+    public void shouldAcceptValidUsernameAndPassword() {
+        final LdapUsernamePasswordAuthenticator authenticator = getAuthenticator();
+        assertTrue(authenticator.authenticate(LdapContainerUtils.EXISTING_USERNAME, LdapContainerUtils.EXISTING_USER_PASSWORD));
     }
 
     @Test
     public void shouldDenyEmptyUserDnOrPassword() {
-        final LdapAuthenticator authenticator = getAuthenticator();
+        final LdapUsernamePasswordAuthenticator authenticator = getAuthenticator();
         assertFalse(authenticator.authenticateByDn(LdapContainerUtils.LDAP_ADMIN_DN, null));
         assertFalse(authenticator.authenticateByDn(LdapContainerUtils.LDAP_ADMIN_DN, "".toCharArray()));
         assertFalse(authenticator.authenticateByDn(null, LdapContainerUtils.LDAP_ADMIN_PASSWORD));
@@ -39,8 +39,8 @@ public final class LdapAuthenticatorIntegrationTest {
         assertFalse(authenticator.authenticateByDn("", "".toCharArray()));
     }
 
-    private LdapAuthenticator getAuthenticator() {
-        return new LdapAuthenticator(LdapContainerUtils.getLdapConnectionSpec(ldapContainer), LdapContainerUtils.USER_NAME_TO_DN_FORMAT);
+    private LdapUsernamePasswordAuthenticator getAuthenticator() {
+        return new LdapUsernamePasswordAuthenticator(LdapContainerUtils.getLdapConnectionSpec(LDAP_CONTAINER), LdapContainerUtils.USERNAME_TO_DN_FORMAT);
     }
 
 }

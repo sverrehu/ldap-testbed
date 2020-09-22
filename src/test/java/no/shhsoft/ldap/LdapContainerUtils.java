@@ -14,10 +14,10 @@ final class LdapContainerUtils {
     static final String LDAP_BASE_DN = "dc=shhsoft,dc=no";
     static final String LDAP_ADMIN_DN = "cn=admin," + LDAP_BASE_DN;
     static final char[] LDAP_ADMIN_PASSWORD = "admin".toCharArray();
-    static final String EXISTING_USER_NAME = "sverrehu";
-    static final String EXISTING_RDN = "cn=" + EXISTING_USER_NAME + ",ou=People";
+    static final String EXISTING_USERNAME = "sverrehu";
+    static final String EXISTING_RDN = "cn=" + EXISTING_USERNAME + ",ou=People";
     static final char[] EXISTING_USER_PASSWORD = "secret".toCharArray();
-    static final String USER_NAME_TO_DN_FORMAT = "cn=%s,ou=People," + LDAP_BASE_DN;
+    static final String USERNAME_TO_DN_FORMAT = "cn=%s,ou=People," + LDAP_BASE_DN;
 
     private LdapContainerUtils() {
     }
