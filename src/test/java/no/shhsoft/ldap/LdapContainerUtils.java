@@ -26,7 +26,7 @@ final class LdapContainerUtils {
      * dn: {{ LDAP_BASE_DN }}
      * dn: cn=admin,{{ LDAP_BASE_DN }} */
     static GenericContainer<?> createContainer() {
-        return new GenericContainer<>(DockerImageName.parse("osixia/openldap:1.4.0"))
+        return new GenericContainer<>(DockerImageName.parse("osixia/openldap:1.5.0"))
                .withClasspathResourceMapping("/ldap/bootstrap.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif", BindMode.READ_ONLY)
                .withEnv("LDAP_DOMAIN", LDAP_DOMAIN)
                .withEnv("LDAP_BASE_DN", LDAP_BASE_DN)
