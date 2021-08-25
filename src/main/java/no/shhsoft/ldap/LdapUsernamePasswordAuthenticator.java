@@ -39,35 +39,16 @@ implements UsernamePasswordAuthenticator {
     }
 
     public boolean authenticateByDn(final String userDn, final char[] password) {
-        if (StringUtils.isBlank(userDn) || password == null || password.length == 0) {
+        final LdapContext context = LdapUtils.connect(ldapConnectionSpec, userDn, password);
+        if (context == null) {
             return false;
         }
-        final Hashtable<String, Object> env = new Hashtable<>();
-        /* As per https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/pool.html,
-         * not using connection pooling, since we change the principal of the connection. */
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, ldapConnectionSpec.getUrl());
-        env.put(Context.SECURITY_AUTHENTICATION, "simple");
-        env.put(Context.SECURITY_PRINCIPAL, userDn);
-        env.put(Context.SECURITY_CREDENTIALS, password);
-        LdapContext context = null;
         try {
-            context = new InitialLdapContext(env, null);
-            return true;
-        } catch (final AuthenticationException e) {
-            LOG.info("Authentication failure for user \"" + userDn + "\": " + e.getMessage());
-            return false;
+            context.close();
         } catch (final NamingException e) {
-            throw new UncheckedNamingException(e);
-        } finally {
-            if (context != null) {
-                try {
-                    context.close();
-                } catch (final NamingException e) {
-                    LOG.warn("Ignoring exception when closing LDAP context.", e);
-                }
-            }
+            LOG.warn("Ignoring exception when closing LDAP context.", e);
         }
+        return true;
     }
 
 }
