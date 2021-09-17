@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * For running misc. tests manually. Requires a file $HOME/.ldap-testbed.properties
@@ -25,6 +26,7 @@ import java.util.Set;
  */
 public final class LocalManualTest {
 
+    private static final Logger LOG = Logger.getLogger(LocalManualTest.class.getName());
     private static final String PROPERTIES_FILE = System.getProperty("user.home") + "/.ldap-testbed.properties";
     private static final String USER_DN_SEARCH_FIELD = "userPrincipalName";
     private static final String GROUP_MEMBER_OF_FIELD = "memberOf";
@@ -48,9 +50,8 @@ public final class LocalManualTest {
         final String filter = "(" + USER_DN_SEARCH_FIELD + "=" + escapedDn + ")";
         try {
             final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);
-            while (ne.hasMore()) {
+            if (ne.hasMore()) {
                 final SearchResult sr = ne.next();
-                System.out.println("Found " + sr.getName());
                 final Attributes attributes = sr.getAttributes();
                 if (attributes != null) {
                     final Attribute attribute = attributes.get(GROUP_MEMBER_OF_FIELD);
@@ -61,6 +62,10 @@ public final class LocalManualTest {
                         }
                     }
                 }
+            }
+            if (ne.hasMore()) {
+                LOG.warning("Expected to find unique entry for \"" + filter + "\", but found several. Will not return any groups.");
+                set.clear();
             }
             return set;
         } catch (final NamingException e) {
