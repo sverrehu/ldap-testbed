@@ -29,10 +29,16 @@ implements UsernamePasswordAuthenticator {
 
     private final LdapConnectionSpec ldapConnectionSpec;
     private final String usernameToDnFormat;
+    private final boolean findGroups;
 
     public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat) {
+        this(ldapConnectionSpec, usernameToDnFormat, false);
+    }
+
+    public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final boolean findGroups) {
         this.ldapConnectionSpec = Objects.requireNonNull(ldapConnectionSpec);
         this.usernameToDnFormat = Objects.requireNonNull(usernameToDnFormat);
+        this.findGroups = findGroups;
     }
 
     @Override
@@ -53,7 +59,7 @@ implements UsernamePasswordAuthenticator {
         if (context == null) {
             return false;
         }
-        if (originalUsername != null) {
+        if (findGroups && originalUsername != null) {
             populateGroups(context, userDn, originalUsername);
         }
         try {
