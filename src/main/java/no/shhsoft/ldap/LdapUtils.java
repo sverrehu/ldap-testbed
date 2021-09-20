@@ -4,17 +4,10 @@ import no.shhsoft.utils.StringUtils;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
-import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
-import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -84,39 +77,12 @@ public final class LdapUtils {
         env.put(Context.SECURITY_PRINCIPAL, userDn);
         env.put(Context.SECURITY_CREDENTIALS, password);
         env.put(Context.REFERRAL, "follow");
-        LdapContext context = null;
+        final LdapContext context = null;
         try {
             return new InitialLdapContext(env, null);
         } catch (final AuthenticationException e) {
             LOG.info("Authentication failure for user \"" + userDn + "\": " + e.getMessage());
             return null;
-        } catch (final NamingException e) {
-            throw new UncheckedNamingException(e);
-        }
-    }
-
-    public static Set<String> findGroups(final LdapContext ldap, final String dn) {
-        final Set<String> set = new HashSet<>();
-        final SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        final String escapedDn = LdapUtils.escape(dn);
-        final String filter = "(|(&(uniqueMember=" + escapedDn + ")"
-                              + "(objectClass=groupOfUniqueNames))"
-                              + "(&(member=" + escapedDn
-                              + ")(objectClass=groupOfNames)))";
-        try {
-            final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);
-            while (ne.hasMore()) {
-                final SearchResult sr = ne.next();
-                final Attributes attributes = sr.getAttributes();
-                if (attributes != null) {
-                    final Attribute attribute = attributes.get("cn");
-                    if (attribute != null) {
-                        set.add(attribute.get().toString());
-                    }
-                }
-            }
-            return set;
         } catch (final NamingException e) {
             throw new UncheckedNamingException(e);
         }

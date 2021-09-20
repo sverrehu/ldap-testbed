@@ -1,0 +1,39 @@
+version: 1
+dn: ou=People,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: People
+
+dn: cn=kafka,ou=People,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: kafka
+uid: kafka
+sn: kafka
+description: Kafka Super User
+userPassword: kafka
+
+dn: cn=testuser,ou=People,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: testuser
+uid: testuser
+sn: testuser
+description: Test User
+userPassword: secret
+memberOf: cn=Group1,ou=Groups,dc=example,dc=com
+
+dn: ou=Groups,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: Groups
+
+dn: cn=Group1,ou=Groups,dc=example,dc=com
+objectClass: groupOfNames
+objectClass: top
+cn: Group1
+member: cn=testuser,ou=People,{{ LDAP_BASE_DN }}
