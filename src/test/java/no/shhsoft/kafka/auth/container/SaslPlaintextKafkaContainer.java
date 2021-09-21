@@ -7,6 +7,8 @@ import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,6 +20,8 @@ public class SaslPlaintextKafkaContainer
 extends GenericContainer<SaslPlaintextKafkaContainer> {
 
     private static final DockerImageName DEFAULT_IMAGE = DockerImageName.parse("confluentinc/cp-kafka").withTag("6.2.0");
+    public static final String DEFAULT_SUPER_USERNAME = "kafka";
+    public static final String DEFAULT_SUPER_PASSWORD = "kafka";
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
     private static final String JAAS_CONFIG_FILE = "/tmp/broker_jaas.conf";
     public static final String INTERNAL_LISTENER_NAME = "BROKER";
@@ -28,6 +32,9 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
     /* Note difference between 0.0.0.0 and localhost: The former will be replaced by the container IP. */
     private static final String LISTENERS = "SASL_PLAINTEXT://0.0.0.0:" + KAFKA_PORT + "," + INTERNAL_LISTENER_NAME + "://127.0.0.1:" + KAFKA_INTERNAL_PORT;
     private int port = PORT_NOT_ASSIGNED;
+    private String superUsername = DEFAULT_SUPER_USERNAME;
+    private String superPassword = DEFAULT_SUPER_PASSWORD;
+    private final Map<String, String> usernamesAndPasswords = new HashMap<>();
 
     public SaslPlaintextKafkaContainer() {
         this(DEFAULT_IMAGE);
@@ -48,9 +55,10 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         withEnv("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN");
         withEnv("KAFKA_AUTHORIZER_CLASS_NAME", dockerImageName.getVersionPart().compareTo("6") >= 0 ? "kafka.security.authorizer.AclAuthorizer" : "kafka.security.auth.SimpleAclAuthorizer");
         withEnv("KAFKA_SUPER_USERS", "User:kafka");
-        withEnv("KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka\" password=\"kafka\" user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"");
         withEnv("KAFKA_OPTS", "-Djava.security.auth.login.config=" + JAAS_CONFIG_FILE);
+        withSuperUser(superUsername, superPassword);
+        withUser("alice", "alice-secret");
+        withUser("bob", "bob-secret");
     }
 
     public String getBootstrapServers() {
@@ -58,6 +66,23 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
             throw new IllegalStateException("You should start Kafka container first");
         }
         return String.format("%s:%s", getHost(), port);
+    }
+
+    public SaslPlaintextKafkaContainer withSuperUser(final String username, final String password) {
+        this.superUsername = assertValidUsernameAndPassword(username);
+        this.superPassword = assertValidUsernameAndPassword(password);
+        withEnv("KAFKA_SUPER_USERS", "User:" + username);
+        return this;
+    }
+
+    public SaslPlaintextKafkaContainer withUser(final String usernameAndPassword) {
+        return withUser(usernameAndPassword, usernameAndPassword);
+    }
+
+    public SaslPlaintextKafkaContainer withUser(final String username, final String password) {
+        usernamesAndPasswords.put(
+        assertValidUsernameAndPassword(username), assertValidUsernameAndPassword(password));
+        return this;
     }
 
     @Override
@@ -74,15 +99,9 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         if (reused) {
             return;
         }
+        withEnv("KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG", createJaasLoginLine());
         uploadJaasConfig();
         createStartupScript(startZookeeper());
-    }
-
-    private void uploadJaasConfig() {
-        final String jaas = "KafkaServer { org.apache.kafka.common.security.plain.PlainLoginModule required "
-                            + "username=\"kafka\" password=\"kafka\" "
-                            + "user_kafka=\"kafka\" user_alice=\"alice-secret\" user_bob=\"bob-secret\"; };\n";
-        copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0644), JAAS_CONFIG_FILE);
     }
 
     private void createStartupScript(final String zookeeperConnect) {
@@ -116,6 +135,45 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
             throw new RuntimeException(e);
         }
         return "127.0.0.1:" + ZOOKEEPER_PORT;
+    }
+
+    private void uploadJaasConfig() {
+        final String jaas = "KafkaServer { " + createJaasLoginLine() + " };\n";
+        copyFileToContainer(Transferable.of(jaas.getBytes(StandardCharsets.UTF_8), 0644), JAAS_CONFIG_FILE);
+    }
+
+    private String createJaasLoginLine() {
+        /* Precondition: No usernames or passwords contain characters that need special handling for JAAS config. */
+        final StringBuilder sb = new StringBuilder();
+        sb.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"");
+        sb.append(superUsername);
+        sb.append("\" password=\"");
+        sb.append(superPassword);
+        sb.append("\" user_");
+        sb.append(superUsername);
+        sb.append("=\"");
+        sb.append(superPassword);
+        sb.append("\"");
+        for (final Map.Entry<String, String> entry : usernamesAndPasswords.entrySet()) {
+            sb.append(" user_");
+            sb.append(entry.getKey());
+            sb.append("=\"");
+            sb.append(entry.getValue());
+            sb.append("\"");
+        }
+        sb.append(";");
+        return sb.toString();
+    }
+
+    private static String assertValidUsernameAndPassword(final String s) {
+        /* Enforcing, in order to not have to deal with escaping for the JAAS config. */
+        for (final char c : s.toCharArray()) {
+            if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-')) {
+                throw new RuntimeException(
+                "Only letters, digits and hyphens allowed in usernames and passwords.");
+            }
+        }
+        return s;
     }
 
 }
