@@ -35,8 +35,9 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     private static void setupTestTopicsAndAcls() {
         assertLdapAuthenticationWorks();
+        container.addTopic("testtopic");
+        container.addProducer("testtopic", "User:foo");
         final AdminClient adminClient = container.getSuperAdminClient();
-        adminClient.createTopics(Collections.singleton(new NewTopic("testtopic", 1, (short) 1)));
         try {
             for (final String topicName : adminClient.listTopics().names().get()) {
                 System.out.println("Topic: " + topicName);

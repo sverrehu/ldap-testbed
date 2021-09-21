@@ -1,12 +1,23 @@
 package no.shhsoft.kafka.auth.container;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.acl.AccessControlEntry;
+import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.acl.AclPermissionType;
+import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.testcontainers.images.builder.Transferable;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 public class TestKafkaContainer
 extends SaslPlaintextKafkaContainer {
@@ -52,6 +63,24 @@ extends SaslPlaintextKafkaContainer {
             }
         }
         return null;
+    }
+
+    public void addTopic(final String topicName) {
+        final NewTopic newTopic = new NewTopic(topicName, 1, (short) 1);
+        getSuperAdminClient().createTopics(Collections.singleton(newTopic));
+    }
+
+    public void addProducer(final String topicName, final String principal) {
+        final AclBinding describeAclBinding = createBinding(topicName, principal, AclOperation.DESCRIBE);
+        final AclBinding writeAclBinding = createBinding(topicName, principal, AclOperation.WRITE);
+        final Collection<AclBinding> aclBindings = Arrays.asList(describeAclBinding, writeAclBinding);
+        getSuperAdminClient().createAcls(aclBindings);
+    }
+
+    private AclBinding createBinding(final String topicName, final String principal, final AclOperation operation) {
+        final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, topicName, PatternType.LITERAL);
+        final AccessControlEntry accessControlEntry = new AccessControlEntry(principal, "*", operation, AclPermissionType.ALLOW);
+        return new AclBinding(resourcePattern, accessControlEntry);
     }
 
 }
