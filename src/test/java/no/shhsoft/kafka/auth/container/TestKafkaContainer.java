@@ -23,7 +23,7 @@ import java.util.Collections;
 public class TestKafkaContainer
 extends SaslPlaintextKafkaContainer {
 
-    private static final String COMBO_JAR_ARTIFACT_NAME = "k3a-auth-all";
+    private static final String COMBO_JAR_ARTIFACT_NAME = "ldap-testbed";
     private final String pathToComboJar;
 
     public TestKafkaContainer() {
