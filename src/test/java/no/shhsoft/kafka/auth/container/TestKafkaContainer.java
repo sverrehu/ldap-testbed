@@ -1,6 +1,7 @@
 package no.shhsoft.kafka.auth.container;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
@@ -22,7 +23,7 @@ import java.util.Collections;
 public class TestKafkaContainer
 extends SaslPlaintextKafkaContainer {
 
-    private static final String COMBO_JAR_ARTIFACT_NAME = "ldap-testbed";
+    private static final String COMBO_JAR_ARTIFACT_NAME = "k3a-auth-all";
     private final String pathToComboJar;
 
     public TestKafkaContainer() {
@@ -67,14 +68,18 @@ extends SaslPlaintextKafkaContainer {
 
     public void addTopic(final String topicName) {
         final NewTopic newTopic = new NewTopic(topicName, 1, (short) 1);
-        getSuperAdminClient().createTopics(Collections.singleton(newTopic));
+        try (final Admin admin = getSuperAdmin()) {
+            admin.createTopics(Collections.singleton(newTopic));
+        }
     }
 
     public void addProducer(final String topicName, final String principal) {
         final AclBinding describeAclBinding = createBinding(topicName, principal, AclOperation.DESCRIBE);
         final AclBinding writeAclBinding = createBinding(topicName, principal, AclOperation.WRITE);
         final Collection<AclBinding> aclBindings = Arrays.asList(describeAclBinding, writeAclBinding);
-        getSuperAdminClient().createAcls(aclBindings);
+        try (final Admin admin = getSuperAdmin()) {
+            admin.createAcls(aclBindings);
+        }
     }
 
     private AclBinding createBinding(final String topicName, final String principal, final AclOperation operation) {

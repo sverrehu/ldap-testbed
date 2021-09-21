@@ -3,6 +3,7 @@ package no.shhsoft.kafka.auth.container;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -180,11 +181,11 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         return s;
     }
 
-    public AdminClient getSuperAdminClient() {
-        return getAdminClient(superUsername, superPassword);
+    public Admin getSuperAdmin() {
+        return getAdmin(superUsername, superPassword);
     }
 
-    public AdminClient getAdminClient(final String username, final String password) {
+    public Admin getAdmin(final String username, final String password) {
         return AdminClient.create(getSaslConfig(username, password));
     }
 
