@@ -47,7 +47,7 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     private static void assertLdapAuthenticationWorks() {
         final LdapConnectionSpec ldapConnectionSpec = new LdapConnectionSpec(ldapContainer.getLdapHost(), ldapContainer.getLdapPort(), false, ldapContainer.getLdapBaseDn());
-        final LdapUsernamePasswordAuthenticator ldapUsernamePasswordAuthenticator = new LdapUsernamePasswordAuthenticator(ldapConnectionSpec, USERNAME_TO_DN_FORMAT, false);
+        final LdapUsernamePasswordAuthenticator ldapUsernamePasswordAuthenticator = new LdapUsernamePasswordAuthenticator(ldapConnectionSpec, USERNAME_TO_DN_FORMAT, null);
         for (final String userPass : Arrays.asList("kafka", LdapContainer.PRODUCER1_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
             Assert.assertTrue("Failed for " + userPass, ldapUsernamePasswordAuthenticator.authenticate(userPass, userPass.toCharArray()));
         }

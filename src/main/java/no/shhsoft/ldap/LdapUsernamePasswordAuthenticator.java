@@ -13,6 +13,7 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapContext;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -24,21 +25,16 @@ public final class LdapUsernamePasswordAuthenticator
 implements UsernamePasswordAuthenticator {
 
     private static final Logger LOG = LoggerFactory.getLogger(LdapUsernamePasswordAuthenticator.class);
-    private static final String USER_DN_SEARCH_FIELD = "userPrincipalName";
     private static final String GROUP_MEMBER_OF_FIELD = "memberOf";
 
     private final LdapConnectionSpec ldapConnectionSpec;
     private final String usernameToDnFormat;
-    private final boolean findGroups;
+    private final String usernameToUniqueSearchFormat;
 
-    public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat) {
-        this(ldapConnectionSpec, usernameToDnFormat, false);
-    }
-
-    public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final boolean findGroups) {
+    public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final String usernameToUniqueSearchFormat) {
         this.ldapConnectionSpec = Objects.requireNonNull(ldapConnectionSpec);
         this.usernameToDnFormat = Objects.requireNonNull(usernameToDnFormat);
-        this.findGroups = findGroups;
+        this.usernameToUniqueSearchFormat = usernameToUniqueSearchFormat;
     }
 
     @Override
@@ -59,7 +55,7 @@ implements UsernamePasswordAuthenticator {
         if (context == null) {
             return false;
         }
-        if (findGroups && originalUsername != null) {
+        if (!StringUtils.isBlank(usernameToUniqueSearchFormat) && originalUsername != null) {
             populateGroups(context, userDn, originalUsername);
         }
         try {
@@ -75,16 +71,15 @@ implements UsernamePasswordAuthenticator {
             if (!s.equals(originalUsername)) {
                 LOG.warn("Expected \"" + originalUsername + "\", but got \"" + s + "\"");
             }
-            return findAdGroups(context, userDn);
+            return findAdGroups(context, userDn, originalUsername);
         });
     }
 
-    private static Set<String> findAdGroups(final LdapContext ldap, final String dn) {
+    private Set<String> findAdGroups(final LdapContext ldap, final String dn, final String username) {
         final Set<String> set = new HashSet<>();
         final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        final String escapedDn = LdapUtils.escape(dn);
-        final String filter = "(" + USER_DN_SEARCH_FIELD + "=" + escapedDn + ")";
+        final String filter = "(" + String.format(usernameToUniqueSearchFormat, LdapUtils.escape(username)) + ")";
         try {
             final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);
             if (ne.hasMore()) {
@@ -106,7 +101,8 @@ implements UsernamePasswordAuthenticator {
             }
             return set;
         } catch (final NamingException e) {
-            throw new UncheckedNamingException(e);
+            LOG.warn("Unable to fetch groups for \"" + dn + "\". Will return no groups.", e);
+            return Collections.emptySet();
         }
     }
 

@@ -27,13 +27,14 @@ implements AuthenticateCallbackHandler {
     private static final String CONFIG_LDAP_PORT = "authn.ldap.port";
     private static final String CONFIG_LDAP_BASE_DN = "authn.ldap.base.dn";
     private static final String CONFIG_LDAP_USERNAME_TO_DN_FORMAT = "authn.ldap.username.to.dn.format";
+    private static final String CONFIG_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT = "authn.ldap.username.to.unique.search.format";
     private static final String SASL_PLAIN = "PLAIN";
     private UsernamePasswordAuthenticator authenticator;
     private final UsernamePasswordAuthenticatorFactory usernamePasswordAuthenticatorFactory;
 
     public interface UsernamePasswordAuthenticatorFactory {
 
-        UsernamePasswordAuthenticator create(LdapConnectionSpec spec, String usernameToDnFormat);
+        UsernamePasswordAuthenticator create(LdapConnectionSpec spec, String usernameToDnFormat, String usernameToUniqueSearchFormat);
 
     }
 
@@ -58,7 +59,8 @@ implements AuthenticateCallbackHandler {
         final int port = getRequiredIntProperty(configs, CONFIG_LDAP_PORT);
         final String baseDn = getRequiredStringProperty(configs, CONFIG_LDAP_BASE_DN);
         final String usernameToDnFormat = getRequiredStringProperty(configs, CONFIG_LDAP_USERNAME_TO_DN_FORMAT);
-        authenticator = usernamePasswordAuthenticatorFactory.create(new LdapConnectionSpec(host, port, port == 636, baseDn), usernameToDnFormat);
+        final String usernameToUniqueSearchFormat = getStringProperty(configs, CONFIG_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT);
+        authenticator = usernamePasswordAuthenticatorFactory.create(new LdapConnectionSpec(host, port, port == 636, baseDn), usernameToDnFormat, usernameToUniqueSearchFormat);
         LOG.info("Configured.");
     }
 
@@ -69,6 +71,11 @@ implements AuthenticateCallbackHandler {
         } catch (final NumberFormatException e) {
             throw new IllegalArgumentException("Value must be numeric in configuration property \"" + name + "\".");
         }
+    }
+
+    private String getStringProperty(final Map<String, ?> configs, final String name) {
+        final Object value = configs.get(name);
+        return value == null ? null : value.toString();
     }
 
     private String getRequiredStringProperty(final Map<String, ?> configs, final String name) {

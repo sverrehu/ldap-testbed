@@ -16,6 +16,7 @@ final class EmbeddedLdapUtils {
     static final String EXISTING_RDN = "cn=" + EXISTING_USERNAME + ",ou=People";
     static final char[] EXISTING_USER_PASSWORD = "secret".toCharArray();
     static final String USERNAME_TO_DN_FORMAT = "cn=%s,ou=People," + LDAP_BASE_DN;
+    static final String USERNAME_TO_UNIQUE_SEARCH_FORMAT = "uid=%s";
 
     private EmbeddedLdapUtils() {
     }
