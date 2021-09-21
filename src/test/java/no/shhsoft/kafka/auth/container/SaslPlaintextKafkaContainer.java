@@ -4,6 +4,10 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
@@ -59,8 +63,6 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
         withEnv("KAFKA_SUPER_USERS", "User:kafka");
         withEnv("KAFKA_OPTS", "-Djava.security.auth.login.config=" + JAAS_CONFIG_FILE);
         withSuperUser(superUsername, superPassword);
-        withUser("alice", "alice-secret");
-        withUser("bob", "bob-secret");
     }
 
     public String getBootstrapServers() {
@@ -183,8 +185,19 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
     }
 
     public AdminClient getAdminClient(final String username, final String password) {
-        final Map<String, Object> saslConfig = getSaslConfig(username, password);
-        return AdminClient.create(saslConfig);
+        return AdminClient.create(getSaslConfig(username, password));
+    }
+
+    public Producer<String, String> getProducer(final String username, final String password) {
+        final Map<String, Object> config = getSaslConfig(username, password);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.ACKS_CONFIG, "all");
+        config.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, "3000");
+        config.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, "3000");
+        config.put(ProducerConfig.LINGER_MS_CONFIG, "0");
+        config.put(ProducerConfig.RETRIES_CONFIG, "0");
+        return new KafkaProducer<>(config);
     }
 
     public Map<String, Object> getSaslConfig(final String username, final String password) {

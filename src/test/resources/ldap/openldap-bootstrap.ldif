@@ -15,16 +15,28 @@ sn: kafka
 description: Kafka Super User
 userPassword: kafka
 
-dn: cn=testuser,ou=People,dc=example,dc=com
+dn: cn=producer1,ou=People,dc=example,dc=com
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
 objectClass: person
 objectClass: top
-cn: testuser
-uid: testuser
-sn: testuser
+cn: producer1
+uid: producer1
+sn: producer1
 description: Test User
-userPassword: secret
+userPassword: producer1
+memberOf: cn=Group1,ou=Groups,dc=example,dc=com
+
+dn: cn=nonproducer,ou=People,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: nonproducer
+uid: nonproducer
+sn: nonproducer
+description: Test User
+userPassword: nonproducer
 memberOf: cn=Group1,ou=Groups,dc=example,dc=com
 
 dn: ou=Groups,dc=example,dc=com
@@ -36,4 +48,4 @@ dn: cn=Group1,ou=Groups,dc=example,dc=com
 objectClass: groupOfNames
 objectClass: top
 cn: Group1
-member: cn=testuser,ou=People,{{ LDAP_BASE_DN }}
+member: cn=producer1,ou=People,{{ LDAP_BASE_DN }}
