@@ -35,7 +35,7 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     private static void setupTestTopicsAndAcls() {
         assertLdapAuthenticationWorks();
-        final AdminClient adminClient = ContainerTestUtils.getSaslAdminClient(container, "kafka", "kafka");
+        final AdminClient adminClient = container.getSuperAdminClient();
         adminClient.createTopics(Collections.singleton(new NewTopic("testtopic", 1, (short) 1)));
         try {
             for (final String topicName : adminClient.listTopics().names().get()) {
@@ -55,5 +55,6 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
     @Test
     public void shouldFoo() {
     }
+
 
 }

@@ -2,6 +2,8 @@ package no.shhsoft.kafka.auth.container;
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.admin.AdminClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
@@ -110,7 +112,7 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
             throw new RuntimeException("Need environment variable KAFKA_LISTENERS");
         }
         final String advertisedListeners = listeners.replaceAll(":" + KAFKA_PORT, ":" + getMappedPort(KAFKA_PORT))
-                                                    .replaceAll("0\\.0\\.0\\.0", getContainerIpAddress());
+        .replaceAll("0\\.0\\.0\\.0", getContainerIpAddress());
         final String starterScript = "#!/bin/bash\n"
                                      + "export KAFKA_ZOOKEEPER_CONNECT='" + zookeeperConnect + "'\n"
                                      + "export KAFKA_ADVERTISED_LISTENERS='" + advertisedListeners + "'\n"
@@ -122,13 +124,13 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
 
     private String startZookeeper() {
         final ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(getContainerId())
-            .withCmd("sh", "-c", "echo '*** Starting Zookeeper'\n"
-                                 + "printf 'clientPort=" + ZOOKEEPER_PORT + "\n"
-                                 + "dataDir=/var/lib/zookeeper/data\ndataLogDir=/var/lib/zookeeper/log' > zookeeper.properties\n"
-                                 + "zookeeper-server-start zookeeper.properties\n")
-            .withAttachStderr(true)
-            .withAttachStdout(true)
-            .exec();
+        .withCmd("sh", "-c", "echo '*** Starting Zookeeper'\n"
+                             + "printf 'clientPort=" + ZOOKEEPER_PORT + "\n"
+                             + "dataDir=/var/lib/zookeeper/data\ndataLogDir=/var/lib/zookeeper/log' > zookeeper.properties\n"
+                             + "zookeeper-server-start zookeeper.properties\n")
+        .withAttachStderr(true)
+        .withAttachStdout(true)
+        .exec();
         try {
             dockerClient.execStartCmd(execCreateCmdResponse.getId()).start().awaitStarted(10, TimeUnit.SECONDS);
         } catch (final InterruptedException e) {
@@ -174,6 +176,27 @@ extends GenericContainer<SaslPlaintextKafkaContainer> {
             }
         }
         return s;
+    }
+
+    public AdminClient getSuperAdminClient() {
+        return getAdminClient(superUsername, superPassword);
+    }
+
+    public AdminClient getAdminClient(final String username, final String password) {
+        final Map<String, Object> saslConfig = getSaslConfig(username, password);
+        return AdminClient.create(saslConfig);
+    }
+
+    public Map<String, Object> getSaslConfig(final String username, final String password) {
+        final Map<String, Object> map = new HashMap<>();
+        map.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, getBootstrapServers());
+        map.put("security.protocol", "SASL_PLAINTEXT");
+        map.put("sasl.mechanism", "PLAIN");
+        map.put("sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required username="
+                + assertValidUsernameAndPassword(username)
+                + " password=" + assertValidUsernameAndPassword(password) + ";");
+        return map;
     }
 
 }
