@@ -23,9 +23,20 @@ objectClass: top
 cn: producer1
 uid: producer1
 sn: producer1
-description: Test User
+description: Producer 1
 userPassword: producer1
-memberOf: cn=Group1,ou=Groups,dc=example,dc=com
+
+dn: cn=producer2,ou=People,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: producer2
+uid: producer2
+sn: producer2
+description: Producer 2
+userPassword: producer2
+memberOf: cn=producers,ou=Groups,dc=example,dc=com
 
 dn: cn=nonproducer,ou=People,dc=example,dc=com
 objectClass: inetOrgPerson
@@ -44,8 +55,8 @@ objectClass: organizationalUnit
 objectClass: top
 ou: Groups
 
-dn: cn=Group1,ou=Groups,dc=example,dc=com
+dn: cn=producers,ou=Groups,dc=example,dc=com
 objectClass: groupOfNames
 objectClass: top
 cn: Group1
-member: cn=producer1,ou=People,{{ LDAP_BASE_DN }}
+member: cn=producer2,ou=People,dc=example,dc=com

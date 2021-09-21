@@ -11,6 +11,8 @@ extends GenericContainer<LdapContainer> {
     static final String LDAP_BASE_DN = "dc=example,dc=com";
     static final char[] LDAP_ADMIN_PASSWORD = "admin".toCharArray();
     public static final String PRODUCER1_USER_PASS = "producer1";
+    public static final String PRODUCER2_USER_PASS = "producer2";
+    public static final String PRODUCER_GROUP = "cn=producers,ou=Groups," + LDAP_BASE_DN;
     public static final String NON_PRODUCER_USER_PASS = "nonproducer";
 
     public LdapContainer() {
