@@ -51,7 +51,7 @@ public final class LdapUsernamePasswordAuthenticatorIntegrationTest {
     }
 
     private LdapUsernamePasswordAuthenticator getAuthenticator() {
-        return new LdapUsernamePasswordAuthenticator(EmbeddedLdapUtils.getLdapConnectionSpec(LDAP_RULE), EmbeddedLdapUtils.USERNAME_TO_DN_FORMAT);
+        return new LdapUsernamePasswordAuthenticator(EmbeddedLdapUtils.getLdapConnectionSpec(LDAP_RULE), EmbeddedLdapUtils.USERNAME_TO_DN_FORMAT, true);
     }
 
 }
