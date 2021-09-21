@@ -1,5 +1,8 @@
 package no.shhsoft.ldap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -9,11 +12,7 @@ import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapContext;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.logging.Logger;
+import java.util.*;
 
 /**
  * For running misc. tests manually. Requires a file $HOME/.ldap-testbed.properties
@@ -26,28 +25,28 @@ import java.util.logging.Logger;
  */
 public final class LocalManualTest {
 
-    private static final Logger LOG = Logger.getLogger(LocalManualTest.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(LocalManualTest.class);
     private static final String PROPERTIES_FILE = System.getProperty("user.home") + "/.ldap-testbed.properties";
-    private static final String USER_DN_SEARCH_FIELD = "userPrincipalName";
     private static final String GROUP_MEMBER_OF_FIELD = "memberOf";
+    private final String usernameToUniqueSearchFormat = "userPrincipalName=%s";
 
-    private static void doit(final LdapConnectionSpec connectionSpec, final String userDn, final char[] password) {
+    private void doit(final LdapConnectionSpec connectionSpec, final String userDn, final char[] password) {
         final LdapContext context = LdapUtils.connect(connectionSpec, userDn, password);
         if (context == null) {
             throw new RuntimeException("No LdapContext");
         }
         final Set<String> groups = findAdGroups(context, userDn);
+        System.out.println("Groups for " + userDn + ":" + (groups.isEmpty() ? " None" : ""));
         for (final String group : groups) {
             System.out.println("  Group: " + group);
         }
     }
 
-    private static Set<String> findAdGroups(final LdapContext ldap, final String dn) {
+    private Set<String> findAdGroups(final LdapContext ldap, final String username) {
         final Set<String> set = new HashSet<>();
         final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        final String escapedDn = LdapUtils.escape(dn);
-        final String filter = "(" + USER_DN_SEARCH_FIELD + "=" + escapedDn + ")";
+        final String filter = "(" + String.format(usernameToUniqueSearchFormat, LdapUtils.escape(username)) + ")";
         try {
             final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);
             if (ne.hasMore()) {
@@ -64,12 +63,13 @@ public final class LocalManualTest {
                 }
             }
             if (ne.hasMore()) {
-                LOG.warning("Expected to find unique entry for \"" + filter + "\", but found several. Will not return any groups.");
+                LOG.warn("Expected to find unique entry for \"" + filter + "\", but found several. Will not return any groups.");
                 set.clear();
             }
             return set;
         } catch (final NamingException e) {
-            throw new UncheckedNamingException(e);
+            LOG.warn("Unable to fetch groups for \"" + username + "\". Will return no groups.", e);
+            return Collections.emptySet();
         }
     }
 
@@ -84,7 +84,7 @@ public final class LocalManualTest {
             final LdapConnectionSpec connectionSpec = new LdapConnectionSpec(host, port, useTls, baseDn);
             final String userDn = Objects.requireNonNull(props.getProperty("userDn"));
             final String password = Objects.requireNonNull(props.getProperty("password"));
-            doit(connectionSpec, userDn, password.toCharArray());
+            new LocalManualTest().doit(connectionSpec, userDn, password.toCharArray());
         } catch (IOException e) {
             throw new RuntimeException("Unable to read " + PROPERTIES_FILE);
         }
