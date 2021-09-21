@@ -7,7 +7,7 @@ import org.apache.kafka.server.authorizer.AuthorizationResult;
 
 import java.util.List;
 
-public class LdapGroupAclAuthorizer
+public final class LdapGroupAclAuthorizer
 extends AclAuthorizer {
 
     @Override

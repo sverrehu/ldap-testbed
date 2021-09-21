@@ -7,7 +7,7 @@ import no.shhsoft.utils.cache.TimeoutCache;
 import java.util.Set;
 import java.util.function.Function;
 
-public class UserToGroupsCache
+public final class UserToGroupsCache
 implements UserToGroupsMapper {
 
     private static final UserToGroupsCache INSTANCE = new UserToGroupsCache();
