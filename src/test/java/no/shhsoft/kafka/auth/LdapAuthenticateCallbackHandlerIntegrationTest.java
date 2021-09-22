@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.TopicAuthorizationException;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -38,6 +39,11 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
         container.withEnv("KAFKA_AUTHORIZER_CLASS_NAME", LdapGroupAclAuthorizer.class.getName());
         container.start();
         setupTestTopicsAndAcls();
+    }
+
+    @Before
+    public void before() {
+        UserToGroupsCache.getInstance().clear();
     }
 
     private static void setupTestTopicsAndAcls() {
