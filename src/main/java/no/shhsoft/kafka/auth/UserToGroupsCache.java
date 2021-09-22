@@ -51,4 +51,9 @@ implements UserToGroupsMapper {
         setGroupsForUser(user, fetcher.apply(user));
     }
 
+    @Override
+    public void clear() {
+        cache.clear();
+    }
+
 }

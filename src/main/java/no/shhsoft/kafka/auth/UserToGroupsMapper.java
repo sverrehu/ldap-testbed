@@ -14,4 +14,6 @@ public interface UserToGroupsMapper {
 
     void fetchGroupsForUserIfNeeded(String user, Function<String, Set<String>> fetcher);
 
+    void clear();
+
 }
