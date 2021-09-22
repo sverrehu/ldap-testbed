@@ -13,7 +13,7 @@ extends AbstractPrincipalBuilder {
 
     @Override
     public KafkaPrincipal build(final AuthenticationContext context) {
-        LOG.info("*** Build. context is " + context.getClass().getName());
+//        LOG.info("*** Build. context is " + context.getClass().getName());
         if (context instanceof SaslAuthenticationContext) {
             final SaslAuthenticationContext saslContext = (SaslAuthenticationContext) context;
         }

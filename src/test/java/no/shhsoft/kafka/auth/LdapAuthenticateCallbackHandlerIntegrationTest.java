@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     private static final String USERNAME_TO_DN_FORMAT = "cn=%s,ou=People,dc=example,dc=com";
-    private static final String USERNAME_TO_UNIQUE_SEARCH_FORMAT = "uid=%s";
+    private static final String USERNAME_TO_UNIQUE_SEARCH_FORMAT = "cn=%s";
     public static final String TOPIC_WITH_USER_PRINCIPAL = "topic_with_user_principal";
     public static final String TOPIC_WITH_GROUP_PRINCIPAL = "topic_with_group_principal";
     private static TestKafkaContainer container;
@@ -35,7 +35,7 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
         container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT", USERNAME_TO_UNIQUE_SEARCH_FORMAT);
         container.withEnv("KAFKA_LISTENER_NAME_SASL__PLAINTEXT_PLAIN_SASL_SERVER_CALLBACK_HANDLER_CLASS", LdapAuthenticateCallbackHandler.class.getName());
         container.withEnv("KAFKA_PRINCIPAL_BUILDER_CLASS", LdapGroupsPrincipalBuilder.class.getName());
-container.withEnv("KAFKA_AUTHORIZER_CLASS_NAME", AlternativeAclAuthorizer.class.getName());
+        container.withEnv("KAFKA_AUTHORIZER_CLASS_NAME", LdapGroupAclAuthorizer.class.getName());
         container.start();
         setupTestTopicsAndAcls();
     }
