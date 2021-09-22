@@ -71,11 +71,11 @@ implements UsernamePasswordAuthenticator {
             if (!s.equals(username)) {
                 LOG.warn("Expected \"" + username + "\", but got \"" + s + "\"");
             }
-            return findAdGroups(context, username);
+            return findGroups(context, username);
         });
     }
 
-    private Set<String> findAdGroups(final LdapContext ldap, final String username) {
+    private Set<String> findGroups(final LdapContext ldap, final String username) {
         final Set<String> set = new HashSet<>();
         final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);

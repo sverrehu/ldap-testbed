@@ -29,20 +29,22 @@ public final class LocalManualTest {
     private static final String PROPERTIES_FILE = System.getProperty("user.home") + "/.ldap-testbed.properties";
     private static final String GROUP_MEMBER_OF_FIELD = "memberOf";
     private final String usernameToUniqueSearchFormat = "userPrincipalName=%s";
+    private LdapConnectionSpec ldapConnectionSpec;
 
     private void doit(final LdapConnectionSpec connectionSpec, final String userDn, final char[] password) {
+        this.ldapConnectionSpec = connectionSpec;
         final LdapContext context = LdapUtils.connect(connectionSpec, userDn, password);
         if (context == null) {
             throw new RuntimeException("No LdapContext");
         }
-        final Set<String> groups = findAdGroups(context, userDn);
+        final Set<String> groups = findGroups(context, userDn);
         System.out.println("Groups for " + userDn + ":" + (groups.isEmpty() ? " None" : ""));
         for (final String group : groups) {
             System.out.println("  Group: " + group);
         }
     }
 
-    private Set<String> findAdGroups(final LdapContext ldap, final String username) {
+    private Set<String> findGroups(final LdapContext ldap, final String username) {
         final Set<String> set = new HashSet<>();
         final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
