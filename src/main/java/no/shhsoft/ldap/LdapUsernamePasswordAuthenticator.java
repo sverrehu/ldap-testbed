@@ -79,6 +79,7 @@ implements UsernamePasswordAuthenticator {
         final Set<String> set = new HashSet<>();
         final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        sc.setReturningAttributes(new String[] { GROUP_MEMBER_OF_FIELD });
         final String filter = "(" + String.format(usernameToUniqueSearchFormat, LdapUtils.escape(username)) + ")";
         try {
             final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);

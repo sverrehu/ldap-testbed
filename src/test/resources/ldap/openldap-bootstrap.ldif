@@ -36,7 +36,6 @@ uid: producer2
 sn: producer2
 description: Producer 2
 userPassword: producer2
-memberOf: cn=producers,ou=Groups,dc=example,dc=com
 
 dn: cn=nonproducer,ou=People,dc=example,dc=com
 objectClass: inetOrgPerson
@@ -55,7 +54,7 @@ objectClass: top
 ou: Groups
 
 dn: cn=producers,ou=Groups,dc=example,dc=com
-objectClass: groupOfNames
+objectClass: groupOfUniqueNames
 objectClass: top
 cn: producers
-member: cn=producer2,ou=People,dc=example,dc=com
+uniqueMember: cn=producer2,ou=People,dc=example,dc=com
