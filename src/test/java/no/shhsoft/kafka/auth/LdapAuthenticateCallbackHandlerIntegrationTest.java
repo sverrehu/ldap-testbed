@@ -35,6 +35,7 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
         container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT", USERNAME_TO_UNIQUE_SEARCH_FORMAT);
         container.withEnv("KAFKA_LISTENER_NAME_SASL__PLAINTEXT_PLAIN_SASL_SERVER_CALLBACK_HANDLER_CLASS", LdapAuthenticateCallbackHandler.class.getName());
         container.withEnv("KAFKA_PRINCIPAL_BUILDER_CLASS", LdapGroupsPrincipalBuilder.class.getName());
+container.withEnv("KAFKA_AUTHORIZER_CLASS_NAME", AlternativeAclAuthorizer.class.getName());
         container.start();
         setupTestTopicsAndAcls();
     }
