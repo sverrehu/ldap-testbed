@@ -48,7 +48,6 @@ uid: nonproducer
 sn: nonproducer
 description: Test User
 userPassword: nonproducer
-memberOf: cn=Group1,ou=Groups,dc=example,dc=com
 
 dn: ou=Groups,dc=example,dc=com
 objectClass: organizationalUnit
@@ -58,5 +57,5 @@ ou: Groups
 dn: cn=producers,ou=Groups,dc=example,dc=com
 objectClass: groupOfNames
 objectClass: top
-cn: Group1
+cn: producers
 member: cn=producer2,ou=People,dc=example,dc=com
