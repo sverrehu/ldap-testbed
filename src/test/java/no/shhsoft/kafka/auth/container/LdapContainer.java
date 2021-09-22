@@ -21,6 +21,18 @@ extends GenericContainer<LdapContainer> {
         this(DockerImageName.parse("osixia/openldap:1.4.0"));
     }
 
+    @Override
+    public void start() {
+        super.start();
+        /* It appears slapd (the OpenLDAP process) is not fully ready when the container has started.
+         * Give it some slack to let it spin up. */
+        try {
+            Thread.sleep(1000L);
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public LdapContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
         withClasspathResourceMapping("/ldap/openldap-bootstrap.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/50-openldap-bootstrap.ldif", BindMode.READ_ONLY);
