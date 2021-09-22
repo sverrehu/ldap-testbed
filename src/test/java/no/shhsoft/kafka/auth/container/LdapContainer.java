@@ -14,6 +14,8 @@ extends GenericContainer<LdapContainer> {
     public static final String PRODUCER2_USER_PASS = "producer2";
     public static final String PRODUCER_GROUP = "cn=producers,ou=Groups," + LDAP_BASE_DN;
     public static final String NON_PRODUCER_USER_PASS = "nonproducer";
+    public static final String USERNAME_TO_DN_FORMAT = "cn=%s,ou=People,dc=example,dc=com";
+    public static final String USERNAME_TO_UNIQUE_SEARCH_FORMAT = "cn=%s";
 
     public LdapContainer() {
         this(DockerImageName.parse("osixia/openldap:1.4.0"));

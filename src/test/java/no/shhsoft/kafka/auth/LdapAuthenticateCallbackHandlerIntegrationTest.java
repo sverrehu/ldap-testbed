@@ -17,8 +17,6 @@ import java.util.concurrent.ExecutionException;
 
 public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
-    private static final String USERNAME_TO_DN_FORMAT = "cn=%s,ou=People,dc=example,dc=com";
-    private static final String USERNAME_TO_UNIQUE_SEARCH_FORMAT = "cn=%s";
     public static final String TOPIC_WITH_USER_PRINCIPAL = "topic_with_user_principal";
     public static final String TOPIC_WITH_GROUP_PRINCIPAL = "topic_with_group_principal";
     private static TestKafkaContainer container;
@@ -32,8 +30,8 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
         container.withEnv("KAFKA_AUTHN_LDAP_BASE_DN", ldapContainer.getLdapBaseDn());
         container.withEnv("KAFKA_AUTHN_LDAP_HOST", ldapContainer.getLdapHost());
         container.withEnv("KAFKA_AUTHN_LDAP_PORT", String.valueOf(ldapContainer.getLdapPort()));
-        container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_DN_FORMAT", USERNAME_TO_DN_FORMAT);
-        container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT", USERNAME_TO_UNIQUE_SEARCH_FORMAT);
+        container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_DN_FORMAT", LdapContainer.USERNAME_TO_DN_FORMAT);
+        container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT", LdapContainer.USERNAME_TO_UNIQUE_SEARCH_FORMAT);
         container.withEnv("KAFKA_LISTENER_NAME_SASL__PLAINTEXT_PLAIN_SASL_SERVER_CALLBACK_HANDLER_CLASS", LdapAuthenticateCallbackHandler.class.getName());
         container.withEnv("KAFKA_PRINCIPAL_BUILDER_CLASS", LdapGroupsPrincipalBuilder.class.getName());
         container.withEnv("KAFKA_AUTHORIZER_CLASS_NAME", LdapGroupAclAuthorizer.class.getName());
@@ -56,7 +54,7 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     private static void assertLdapAuthenticationWorks() {
         final LdapConnectionSpec ldapConnectionSpec = new LdapConnectionSpec(ldapContainer.getLdapHost(), ldapContainer.getLdapPort(), false, ldapContainer.getLdapBaseDn());
-        final LdapUsernamePasswordAuthenticator ldapUsernamePasswordAuthenticator = new LdapUsernamePasswordAuthenticator(ldapConnectionSpec, USERNAME_TO_DN_FORMAT, null);
+        final LdapUsernamePasswordAuthenticator ldapUsernamePasswordAuthenticator = new LdapUsernamePasswordAuthenticator(ldapConnectionSpec, LdapContainer.USERNAME_TO_DN_FORMAT, null);
         for (final String userPass : Arrays.asList("kafka", LdapContainer.PRODUCER1_USER_PASS, LdapContainer.PRODUCER2_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
             Assert.assertTrue("Failed for " + userPass, ldapUsernamePasswordAuthenticator.authenticate(userPass, userPass.toCharArray()));
         }
