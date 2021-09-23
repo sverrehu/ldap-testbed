@@ -50,7 +50,7 @@ implements UsernamePasswordAuthenticator {
         return authenticateByDn(userDn, password, null);
     }
 
-    public boolean authenticateByDn(final String userDn, final char[] password, final String originalUsername) {
+    private boolean authenticateByDn(final String userDn, final char[] password, final String originalUsername) {
         final LdapContext context = LdapUtils.connect(ldapConnectionSpec, userDn, password);
         if (context == null) {
             return false;

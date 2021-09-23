@@ -7,8 +7,7 @@ import no.shhsoft.utils.cache.TimeoutCache;
 import java.util.Set;
 import java.util.function.Function;
 
-public final class UserToGroupsCache
-implements UserToGroupsMapper {
+public final class UserToGroupsCache {
 
     private static final UserToGroupsCache INSTANCE = new UserToGroupsCache();
     static final long TTL = 10L * 60L * 1000L;
@@ -32,18 +31,14 @@ implements UserToGroupsMapper {
         return INSTANCE;
     }
 
-
-    @Override
     public void setGroupsForUser(final String userName, final Set<String> groups) {
         cache.put(userName, groups, timeProvider.currentTimeMillis() + TTL);
     }
 
-    @Override
     public Set<String> getGroupsForUser(final String userName) {
         return cache.get(userName);
     }
 
-    @Override
     public void fetchGroupsForUserIfNeeded(final String user, final Function<String, Set<String>> fetcher) {
         if (cache.getExpiresInMs(user) >= REFRESH_WHEN_LESS_THAN_MS) {
             return;
@@ -51,7 +46,6 @@ implements UserToGroupsMapper {
         setGroupsForUser(user, fetcher.apply(user));
     }
 
-    @Override
     public void clear() {
         cache.clear();
     }

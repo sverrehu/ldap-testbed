@@ -45,7 +45,7 @@ implements KafkaPrincipalBuilder, Configurable {
      * fetch the builder.
      *
      * @param configs broker configurations
-     * @return a <code>DefaultKafkaPrincipalBuilder</code> configured according the the config.
+     * @return a <code>DefaultKafkaPrincipalBuilder</code> configured according to the config.
      */
     private DefaultKafkaPrincipalBuilder createDefaultKafkaPrincipalBuilder(final Map<String, ?> configs) {
         /* SslPrincipalMapper init from org.apache.kafka.common.network.SslChannelBuilder */

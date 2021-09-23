@@ -77,7 +77,6 @@ public final class LdapUtils {
         env.put(Context.SECURITY_PRINCIPAL, userDn);
         env.put(Context.SECURITY_CREDENTIALS, password);
         env.put(Context.REFERRAL, "follow");
-        final LdapContext context = null;
         try {
             return new InitialLdapContext(env, null);
         } catch (final AuthenticationException e) {

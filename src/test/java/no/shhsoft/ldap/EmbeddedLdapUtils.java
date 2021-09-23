@@ -8,7 +8,7 @@ import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
  */
 final class EmbeddedLdapUtils {
 
-    static final boolean USE_LDAPS = false;
+    private static final boolean USE_LDAPS = false;
     static final String LDAP_BASE_DN = "dc=example,dc=com";
     static final String LDAP_ADMIN_DN = "cn=admin," + LDAP_BASE_DN;
     static final char[] LDAP_ADMIN_PASSWORD = "admin".toCharArray();

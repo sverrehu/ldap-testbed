@@ -7,9 +7,9 @@ import org.testcontainers.utility.DockerImageName;
 public class LdapContainer
 extends GenericContainer<LdapContainer> {
 
-    static final String LDAP_DOMAIN = "example.com";
-    static final String LDAP_BASE_DN = "dc=example,dc=com";
-    static final char[] LDAP_ADMIN_PASSWORD = "admin".toCharArray();
+    private static final String LDAP_DOMAIN = "example.com";
+    private static final String LDAP_BASE_DN = "dc=example,dc=com";
+    private static final char[] LDAP_ADMIN_PASSWORD = "admin".toCharArray();
     public static final String PRODUCER1_USER_PASS = "producer1";
     public static final String PRODUCER2_USER_PASS = "producer2";
     public static final String PRODUCER_GROUP = "cn=producers,ou=Groups," + LDAP_BASE_DN;
@@ -33,7 +33,7 @@ extends GenericContainer<LdapContainer> {
         }
     }
 
-    public LdapContainer(final DockerImageName dockerImageName) {
+    private LdapContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
         withClasspathResourceMapping("/ldap/openldap-bootstrap.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/50-openldap-bootstrap.ldif", BindMode.READ_ONLY);
         withClasspathResourceMapping("/ldap/openldap-access.ldif", "/container/service/slapd/assets/config/bootstrap/ldif/51-openldap-access.ldif", BindMode.READ_ONLY);

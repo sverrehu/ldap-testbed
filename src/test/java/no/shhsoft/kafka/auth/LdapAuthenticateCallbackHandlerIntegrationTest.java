@@ -4,6 +4,7 @@ import no.shhsoft.kafka.auth.container.LdapContainer;
 import no.shhsoft.kafka.auth.container.TestKafkaContainer;
 import no.shhsoft.ldap.LdapConnectionSpec;
 import no.shhsoft.ldap.LdapUsernamePasswordAuthenticator;
+import no.shhsoft.security.UsernamePasswordAuthenticator;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.TopicAuthorizationException;
@@ -17,8 +18,8 @@ import java.util.concurrent.ExecutionException;
 
 public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
-    public static final String TOPIC_WITH_USER_PRINCIPAL = "topic_with_user_principal";
-    public static final String TOPIC_WITH_GROUP_PRINCIPAL = "topic_with_group_principal";
+    private static final String TOPIC_WITH_USER_PRINCIPAL = "topic_with_user_principal";
+    private static final String TOPIC_WITH_GROUP_PRINCIPAL = "topic_with_group_principal";
     private static TestKafkaContainer container;
     private static LdapContainer ldapContainer;
 
@@ -53,10 +54,10 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
     }
 
     private static void assertLdapAuthenticationWorks() {
-        final LdapConnectionSpec ldapConnectionSpec = new LdapConnectionSpec(ldapContainer.getLdapHost(), ldapContainer.getLdapPort(), false, ldapContainer.getLdapBaseDn());
-        final LdapUsernamePasswordAuthenticator ldapUsernamePasswordAuthenticator = new LdapUsernamePasswordAuthenticator(ldapConnectionSpec, LdapContainer.USERNAME_TO_DN_FORMAT, null);
+        final LdapConnectionSpec spec = new LdapConnectionSpec(ldapContainer.getLdapHost(), ldapContainer.getLdapPort(), false, ldapContainer.getLdapBaseDn());
+        final UsernamePasswordAuthenticator authenticator = new LdapUsernamePasswordAuthenticator(spec, LdapContainer.USERNAME_TO_DN_FORMAT, null);
         for (final String userPass : Arrays.asList("kafka", LdapContainer.PRODUCER1_USER_PASS, LdapContainer.PRODUCER2_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
-            Assert.assertTrue("Failed for " + userPass, ldapUsernamePasswordAuthenticator.authenticate(userPass, userPass.toCharArray()));
+            Assert.assertTrue("Failed for " + userPass, authenticator.authenticate(userPass, userPass.toCharArray()));
         }
     }
 
@@ -88,7 +89,7 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
         }
     }
 
-    public void produce(final Producer<String, String> producer, final String topicName, final String recordValue) {
+    private void produce(final Producer<String, String> producer, final String topicName, final String recordValue) {
         final ProducerRecord<String, String> record = new ProducerRecord<>(topicName, null, recordValue);
         try {
             producer.send(record, (metadata, exception) -> {

@@ -21,8 +21,4 @@ public final class LdapConnectionSpec {
         return (useTls ? "ldaps" : "ldap") + "://" + server + ":" + port + "/" + baseDn;
     }
 
-    public String getBaseDn() {
-        return baseDn;
-    }
-
 }
