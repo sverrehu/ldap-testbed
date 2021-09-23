@@ -39,7 +39,6 @@ extends SaslPlaintextKafkaContainer {
     private void copyComboJar() {
         try {
             final byte[] comboJarBytes = Files.readAllBytes(Path.of(pathToComboJar));
-            System.out.println("*** Copying our jar to the container");
             copyFileToContainer(Transferable.of(comboJarBytes), "/usr/share/java/kafka/our-test.jar");
         } catch (final IOException e) {
             throw new RuntimeException(e);

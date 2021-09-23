@@ -44,7 +44,7 @@ extends AclAuthorizer {
     }
 
     private static boolean isSecurityProtocolToOverride(final SecurityProtocol protocol) {
-        return protocol.equals(SecurityProtocol.SASL_SSL) || protocol.equals(SecurityProtocol.SASL_PLAINTEXT);
+        return protocol == SecurityProtocol.SASL_SSL || protocol == SecurityProtocol.SASL_PLAINTEXT;
     }
 
     private void overrideResultsByGroup(final AuthorizableRequestContext requestContext, final List<AuthorizationResult> results, final List<Action> actions) {
@@ -55,10 +55,10 @@ extends AclAuthorizer {
             return;
         }
         for (int q = results.size() - 1; q >= 0; q--) {
-            if (results.get(q).equals(AuthorizationResult.DENIED)) {
+            if (results.get(q) == AuthorizationResult.DENIED) {
                 LOG.info("*** was DENIED, checking if we should override because of group membership...");
                 final AuthorizationResult alternativeResult = authorize(groupsForUser, actions.get(q));
-                if (alternativeResult.equals(AuthorizationResult.ALLOWED)) {
+                if (alternativeResult == AuthorizationResult.ALLOWED) {
                     results.set(q, AuthorizationResult.ALLOWED);
                     LOG.info("*** Overriding DENIED result due to matching group membership");
                 }
@@ -76,11 +76,11 @@ extends AclAuthorizer {
         for (final AclBinding aclBinding : acls) {
             if (isGroupMatch(groups, aclBinding)) {
                 final AclPermissionType permissionType = aclBinding.entry().permissionType();
-                if (permissionType.equals(AclPermissionType.DENY)) {
+                if (permissionType == AclPermissionType.DENY) {
                     /* There is a deny on a group to which the principal is a member. This wins. */
                     return AuthorizationResult.DENIED;
                 }
-                if (permissionType.equals(AclPermissionType.ALLOW)) {
+                if (permissionType == AclPermissionType.ALLOW) {
                     hasSeenAllow = true;
                 }
                 LOG.info("*** " + aclBinding.entry().principal());
