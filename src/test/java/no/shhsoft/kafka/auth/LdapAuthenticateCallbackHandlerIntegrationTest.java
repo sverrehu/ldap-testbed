@@ -11,6 +11,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.testcontainers.containers.Network;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -24,16 +25,25 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     @BeforeClass
     public static void beforeClass() {
+        /* The Network and NetworkAlias stuff is a damned hack to make the Kafka
+         * container find the LDAP container in our Gitlab CI environment. It works
+         * just fine everywhere else. */
+        final Network network = Network.newNetwork();
         ldapContainer = new LdapContainer();
+        ldapContainer.withNetwork(network);
+        ldapContainer.withNetworkAliases("ldap");
         ldapContainer.start();
         container = new TestKafkaContainer();
+        container.withNetwork(network);
         container.withEnv("KAFKA_AUTHN_LDAP_BASE_DN", ldapContainer.getLdapBaseDn());
-        container.withEnv("KAFKA_AUTHN_LDAP_HOST", ldapContainer.getLdapHost());
-        container.withEnv("KAFKA_AUTHN_LDAP_PORT", String.valueOf(ldapContainer.getLdapPort()));
+//        container.withEnv("KAFKA_AUTHN_LDAP_HOST", ldapContainer.getLdapHost());
+//        container.withEnv("KAFKA_AUTHN_LDAP_PORT", String.valueOf(ldapContainer.getLdapPort()));
+        container.withEnv("KAFKA_AUTHN_LDAP_HOST", ldapContainer.getNetworkAliases().get(1));
+        container.withEnv("KAFKA_AUTHN_LDAP_PORT", String.valueOf(389));
         container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_DN_FORMAT", LdapContainer.USERNAME_TO_DN_FORMAT);
         container.withEnv("KAFKA_AUTHN_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT", LdapContainer.USERNAME_TO_UNIQUE_SEARCH_FORMAT);
         container.withEnv("KAFKA_LISTENER_NAME_SASL__PLAINTEXT_PLAIN_SASL_SERVER_CALLBACK_HANDLER_CLASS", LdapAuthenticateCallbackHandler.class.getName());
-//        container.withEnv("KAFKA_PRINCIPAL_BUILDER_CLASS", SpiffeKafkaPrincipalBuilder.class.getName());
+        container.withEnv("KAFKA_PRINCIPAL_BUILDER_CLASS", SpiffeKafkaPrincipalBuilder.class.getName());
         container.withEnv("KAFKA_AUTHORIZER_CLASS_NAME", LdapGroupAclAuthorizer.class.getName());
         container.start();
         setupTestTopicsAndAcls();
