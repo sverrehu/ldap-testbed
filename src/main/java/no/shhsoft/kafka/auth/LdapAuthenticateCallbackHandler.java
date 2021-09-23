@@ -1,7 +1,6 @@
 package no.shhsoft.kafka.auth;
 
 import no.shhsoft.ldap.LdapConnectionSpec;
-import no.shhsoft.ldap.LdapUsernamePasswordAuthenticator;
 import no.shhsoft.security.UsernamePasswordAuthenticator;
 import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.apache.kafka.common.security.plain.PlainAuthenticateCallback;

@@ -1,5 +1,6 @@
-package no.shhsoft.ldap;
+package no.shhsoft.kafka.auth;
 
+import no.shhsoft.ldap.LdapConnectionSpec;
 import org.zapodot.junit.ldap.EmbeddedLdapRule;
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
 

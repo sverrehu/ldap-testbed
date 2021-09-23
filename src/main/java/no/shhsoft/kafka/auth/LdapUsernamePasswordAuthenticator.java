@@ -1,6 +1,7 @@
-package no.shhsoft.ldap;
+package no.shhsoft.kafka.auth;
 
-import no.shhsoft.kafka.auth.UserToGroupsCache;
+import no.shhsoft.ldap.LdapConnectionSpec;
+import no.shhsoft.ldap.LdapUtils;
 import no.shhsoft.security.UsernamePasswordAuthenticator;
 import no.shhsoft.utils.StringUtils;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-public final class LdapUsernamePasswordAuthenticator
+final class LdapUsernamePasswordAuthenticator
 implements UsernamePasswordAuthenticator {
 
     private static final Logger LOG = LoggerFactory.getLogger(LdapUsernamePasswordAuthenticator.class);
@@ -31,7 +32,7 @@ implements UsernamePasswordAuthenticator {
     private final String usernameToDnFormat;
     private final String usernameToUniqueSearchFormat;
 
-    public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final String usernameToUniqueSearchFormat) {
+    LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final String usernameToUniqueSearchFormat) {
         this.ldapConnectionSpec = Objects.requireNonNull(ldapConnectionSpec);
         this.usernameToDnFormat = Objects.requireNonNull(usernameToDnFormat);
         this.usernameToUniqueSearchFormat = usernameToUniqueSearchFormat;

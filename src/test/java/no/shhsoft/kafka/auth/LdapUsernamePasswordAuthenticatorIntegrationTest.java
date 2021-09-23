@@ -1,6 +1,5 @@
-package no.shhsoft.ldap;
+package no.shhsoft.kafka.auth;
 
-import no.shhsoft.kafka.auth.UserToGroupsCache;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.zapodot.junit.ldap.EmbeddedLdapRule;

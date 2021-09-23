@@ -3,7 +3,6 @@ package no.shhsoft.kafka.auth;
 import no.shhsoft.kafka.auth.container.LdapContainer;
 import no.shhsoft.kafka.auth.container.TestKafkaContainer;
 import no.shhsoft.ldap.LdapConnectionSpec;
-import no.shhsoft.ldap.LdapUsernamePasswordAuthenticator;
 import no.shhsoft.security.UsernamePasswordAuthenticator;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;

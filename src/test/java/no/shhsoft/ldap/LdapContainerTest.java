@@ -1,5 +1,6 @@
 package no.shhsoft.ldap;
 
+import no.shhsoft.kafka.auth.LdapUsernamePasswordAuthenticator;
 import no.shhsoft.kafka.auth.UserToGroupsCache;
 import no.shhsoft.kafka.auth.container.LdapContainer;
 import org.junit.Assert;
