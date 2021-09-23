@@ -73,17 +73,25 @@ extends SaslPlaintextKafkaContainer {
     }
 
     public void addProducer(final String topicName, final String principal) {
-        final AclBinding describeAclBinding = createBinding(topicName, principal, AclOperation.DESCRIBE);
-        final AclBinding writeAclBinding = createBinding(topicName, principal, AclOperation.WRITE);
+        addProducer(topicName, principal, AclPermissionType.ALLOW);
+    }
+
+    public void addDeniedProducer(final String topicName, final String principal) {
+        addProducer(topicName, principal, AclPermissionType.DENY);
+    }
+
+    private void addProducer(final String topicName, final String principal, final AclPermissionType permissionType) {
+        final AclBinding describeAclBinding = createBinding(topicName, principal, AclOperation.DESCRIBE, permissionType);
+        final AclBinding writeAclBinding = createBinding(topicName, principal, AclOperation.WRITE, permissionType);
         final Collection<AclBinding> aclBindings = Arrays.asList(describeAclBinding, writeAclBinding);
         try (final Admin admin = getSuperAdmin()) {
             admin.createAcls(aclBindings);
         }
     }
 
-    private AclBinding createBinding(final String topicName, final String principal, final AclOperation operation) {
+    private AclBinding createBinding(final String topicName, final String principal, final AclOperation operation, final AclPermissionType permissionType) {
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, topicName, PatternType.LITERAL);
-        final AccessControlEntry accessControlEntry = new AccessControlEntry(principal, "*", operation, AclPermissionType.ALLOW);
+        final AccessControlEntry accessControlEntry = new AccessControlEntry(principal, "*", operation, permissionType);
         return new AclBinding(resourcePattern, accessControlEntry);
     }
 

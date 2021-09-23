@@ -10,9 +10,11 @@ extends GenericContainer<LdapContainer> {
     private static final String LDAP_DOMAIN = "example.com";
     private static final String LDAP_BASE_DN = "dc=example,dc=com";
     private static final char[] LDAP_ADMIN_PASSWORD = "admin".toCharArray();
-    public static final String PRODUCER1_USER_PASS = "producer1";
-    public static final String PRODUCER2_USER_PASS = "producer2";
-    public static final String PRODUCER_GROUP = "cn=producers,ou=Groups," + LDAP_BASE_DN;
+    public static final String PRODUCER_WITH_USER_ALLOW_USER_PASS = "producer1";
+    public static final String PRODUCER_WITH_GROUP_ALLOW_USER_PASS = "producer2";
+    public static final String PRODUCER_WITH_GROUP_DENY_USER_PASS = "producer3";
+    public static final String PRODUCERS_GROUP = "cn=producers,ou=Groups," + LDAP_BASE_DN;
+    public static final String DENIED_PRODUCERS_GROUP = "cn=deniedproducers,ou=Groups," + LDAP_BASE_DN;
     public static final String NON_PRODUCER_USER_PASS = "nonproducer";
     public static final String USERNAME_TO_DN_FORMAT = "cn=%s,ou=People,dc=example,dc=com";
     public static final String USERNAME_TO_UNIQUE_SEARCH_FORMAT = "uid=%s";

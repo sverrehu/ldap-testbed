@@ -17,8 +17,8 @@ import java.util.concurrent.ExecutionException;
 
 public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
-    private static final String TOPIC_WITH_USER_PRINCIPAL = "topic_with_user_principal";
-    private static final String TOPIC_WITH_GROUP_PRINCIPAL = "topic_with_group_principal";
+    private static final String TOPIC_WITH_USER_ALLOW = "topic_with_user_principal";
+    private static final String TOPIC_WITH_GROUP_ALLOW = "topic_with_group_principal";
     private static TestKafkaContainer container;
     private static LdapContainer ldapContainer;
 
@@ -46,46 +46,58 @@ public class LdapAuthenticateCallbackHandlerIntegrationTest {
 
     private static void setupTestTopicsAndAcls() {
         assertLdapAuthenticationWorks();
-        container.addTopic(TOPIC_WITH_USER_PRINCIPAL);
-        container.addProducer(TOPIC_WITH_USER_PRINCIPAL, "User:" + LdapContainer.PRODUCER1_USER_PASS);
-        container.addTopic(TOPIC_WITH_GROUP_PRINCIPAL);
-        container.addProducer(TOPIC_WITH_GROUP_PRINCIPAL, "Group:" + LdapContainer.PRODUCER_GROUP);
+        container.addTopic(TOPIC_WITH_USER_ALLOW);
+        container.addProducer(TOPIC_WITH_USER_ALLOW, "User:" + LdapContainer.PRODUCER_WITH_USER_ALLOW_USER_PASS);
+        container.addTopic(TOPIC_WITH_GROUP_ALLOW);
+        container.addProducer(TOPIC_WITH_GROUP_ALLOW, "Group:" + LdapContainer.PRODUCERS_GROUP);
+        container.addDeniedProducer(TOPIC_WITH_GROUP_ALLOW, "Group:" + LdapContainer.DENIED_PRODUCERS_GROUP);
     }
 
     private static void assertLdapAuthenticationWorks() {
         final LdapConnectionSpec spec = new LdapConnectionSpec(ldapContainer.getLdapHost(), ldapContainer.getLdapPort(), false, ldapContainer.getLdapBaseDn());
         final UsernamePasswordAuthenticator authenticator = new LdapUsernamePasswordAuthenticator(spec, LdapContainer.USERNAME_TO_DN_FORMAT, null);
-        for (final String userPass : Arrays.asList("kafka", LdapContainer.PRODUCER1_USER_PASS, LdapContainer.PRODUCER2_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
+        for (final String userPass : Arrays.asList("kafka", LdapContainer.PRODUCER_WITH_USER_ALLOW_USER_PASS, LdapContainer.PRODUCER_WITH_GROUP_ALLOW_USER_PASS, LdapContainer.PRODUCER_WITH_GROUP_DENY_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
             Assert.assertTrue("Failed for " + userPass, authenticator.authenticate(userPass, userPass.toCharArray()));
         }
     }
 
     @Test(expected = TopicAuthorizationException.class)
     public void shouldNotProduceWhenNotProducerByUser() {
-        try (final Producer<String, String> producer = container.getProducer(LdapContainer.NON_PRODUCER_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
-            produce(producer, TOPIC_WITH_USER_PRINCIPAL, "foo");
+        try (final Producer<String, String> producer = getProducer(LdapContainer.NON_PRODUCER_USER_PASS)) {
+            produce(producer, TOPIC_WITH_USER_ALLOW, "foo");
         }
     }
 
     @Test
     public void shouldProduceWhenProducerByUser() {
-        try (final Producer<String, String> producer = container.getProducer(LdapContainer.PRODUCER1_USER_PASS, LdapContainer.PRODUCER1_USER_PASS)) {
-            produce(producer, TOPIC_WITH_USER_PRINCIPAL, "foo");
+        try (final Producer<String, String> producer = getProducer(LdapContainer.PRODUCER_WITH_USER_ALLOW_USER_PASS)) {
+            produce(producer, TOPIC_WITH_USER_ALLOW, "foo");
         }
     }
 
     @Test(expected = TopicAuthorizationException.class)
     public void shouldNotProduceWhenNotProducerByGroup() {
-        try (final Producer<String, String> producer = container.getProducer(LdapContainer.NON_PRODUCER_USER_PASS, LdapContainer.NON_PRODUCER_USER_PASS)) {
-            produce(producer, TOPIC_WITH_GROUP_PRINCIPAL, "foo");
+        try (final Producer<String, String> producer = getProducer(LdapContainer.NON_PRODUCER_USER_PASS)) {
+            produce(producer, TOPIC_WITH_GROUP_ALLOW, "foo");
+        }
+    }
+
+    @Test(expected = TopicAuthorizationException.class)
+    public void shouldNotProduceWhenInADeniedGroupEvenIfInAllowedGroup() {
+        try (final Producer<String, String> producer = getProducer(LdapContainer.PRODUCER_WITH_GROUP_DENY_USER_PASS)) {
+            produce(producer, TOPIC_WITH_GROUP_ALLOW, "foo");
         }
     }
 
     @Test
     public void shouldProduceWhenProducerByGroup() {
-        try (final Producer<String, String> producer = container.getProducer(LdapContainer.PRODUCER2_USER_PASS, LdapContainer.PRODUCER2_USER_PASS)) {
-            produce(producer, TOPIC_WITH_GROUP_PRINCIPAL, "foo");
+        try (final Producer<String, String> producer = getProducer(LdapContainer.PRODUCER_WITH_GROUP_ALLOW_USER_PASS)) {
+            produce(producer, TOPIC_WITH_GROUP_ALLOW, "foo");
         }
+    }
+
+    private Producer<String, String> getProducer(final String userPass) {
+        return container.getProducer(userPass, userPass);
     }
 
     private void produce(final Producer<String, String> producer, final String topicName, final String recordValue) {
