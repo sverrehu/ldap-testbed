@@ -18,6 +18,20 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * NOTE!
+ *
+ * This class does not support DENY rules! It will call the original AclAuthorizer first, and
+ * change any DENIED to ALLOWED if there is a group rule that ALLOWs access. This means that
+ * a user that has explicitly been DENIED access, may gain access anyway, based on group
+ * membership!
+ *
+ * The reason for this is that when we process the results of the original AclAuthorizer,
+ * we do not know whether a DENIED is explicit or implicit, som we must assume the latter.
+ *
+ * Using explicit denies is a bad security practice anyway (blacklisting instead of whitelisting),
+ * and we do not use that practice at our place.
+ */
 public final class LdapGroupAclAuthorizer
 extends AclAuthorizer {
 
@@ -27,7 +41,6 @@ extends AclAuthorizer {
 
     @Override
     public List<AuthorizationResult> authorize(final AuthorizableRequestContext requestContext, final List<Action> actions) {
-        LOG.info("*** authorize principal: " + requestContext.principal() + ", protocol: " + requestContext.securityProtocol().name());
         final List<AuthorizationResult> results = super.authorize(requestContext, actions);
         if (isOverridableContext(requestContext)) {
             overrideResultsByGroup(requestContext, results, actions);
@@ -55,13 +68,14 @@ extends AclAuthorizer {
             return;
         }
         for (int q = results.size() - 1; q >= 0; q--) {
-            if (results.get(q) == AuthorizationResult.DENIED) {
-                LOG.info("*** was DENIED, checking if we should override because of group membership...");
-                final AuthorizationResult alternativeResult = authorize(groupsForUser, actions.get(q));
-                if (alternativeResult == AuthorizationResult.ALLOWED) {
-                    results.set(q, AuthorizationResult.ALLOWED);
-                    LOG.info("*** Overriding DENIED result due to matching group membership");
-                }
+            final AuthorizationResult originalResult = results.get(q);
+            if (originalResult == AuthorizationResult.ALLOWED) {
+                continue;
+            }
+            final AuthorizationResult alternativeResult = authorize(groupsForUser, actions.get(q));
+            if (alternativeResult != originalResult && (alternativeResult == AuthorizationResult.ALLOWED || alternativeResult == AuthorizationResult.DENIED)) {
+                results.set(q, alternativeResult);
+                LOG.info("*** Overriding " + originalResult + ", changing to " + alternativeResult + " due to matching group rule for \"" + principal + "\"");
             }
         }
     }
@@ -83,7 +97,6 @@ extends AclAuthorizer {
                 if (permissionType == AclPermissionType.ALLOW) {
                     hasSeenAllow = true;
                 }
-                LOG.info("*** " + aclBinding.entry().principal());
             }
         }
         return hasSeenAllow ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED;
@@ -95,7 +108,6 @@ extends AclAuthorizer {
             return false;
         }
         final String groupName = aclPrincipal.substring(GROUP_TYPE_AND_COLON.length()).trim();
-        LOG.info("*** Checking match for ACL group \"" + groupName + "\"");
         return groups.contains(groupName);
     }
 
