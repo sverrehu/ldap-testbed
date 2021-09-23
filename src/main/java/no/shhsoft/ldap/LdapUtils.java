@@ -8,6 +8,7 @@ import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import java.util.Hashtable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -83,6 +84,7 @@ public final class LdapUtils {
             LOG.info("Authentication failure for user \"" + userDn + "\": " + e.getMessage());
             return null;
         } catch (final NamingException e) {
+            LOG.log(Level.WARNING, "Got unexpected exception when connecting to " + ldapConnectionSpec.getUrl() + " as \"" + userDn + "\"", e);
             throw new UncheckedNamingException(e);
         }
     }

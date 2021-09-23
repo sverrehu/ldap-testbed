@@ -103,7 +103,7 @@ implements UsernamePasswordAuthenticator {
             }
             return set;
         } catch (final NamingException e) {
-            LOG.warn("Unable to fetch groups for \"" + username + "\". Will return no groups.", e);
+            LOG.warn("Exception while fetching groups for \"" + username + "\". Will return no groups.", e);
             return Collections.emptySet();
         }
     }
