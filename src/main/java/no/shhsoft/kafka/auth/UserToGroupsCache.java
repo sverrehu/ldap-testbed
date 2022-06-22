@@ -5,11 +5,11 @@ import no.shhsoft.time.TimeProvider;
 import no.shhsoft.utils.cache.TimeoutCache;
 
 import java.util.Set;
-import java.util.function.Function;
 
-public final class UserToGroupsCache {
+final class UserToGroupsCache {
 
     private static final UserToGroupsCache INSTANCE = new UserToGroupsCache();
+    private UserToGroupsFetcher userToGroupsFetcher;
     static final long TTL = 10L * 60L * 1000L;
     static final long REFRESH_WHEN_LESS_THAN_MS = 30L * 1000L;
     private final TimeoutCache<String, Set<String>> cache;
@@ -36,18 +36,41 @@ public final class UserToGroupsCache {
     }
 
     public Set<String> getGroupsForUser(final String userName) {
+        if (userToGroupsFetcher != null) {
+            fetchGroupsForUserIfNeeded(userName, userToGroupsFetcher);
+        }
         return cache.get(userName);
     }
 
-    public void fetchGroupsForUserIfNeeded(final String user, final Function<String, Set<String>> fetcher) {
+    public void fetchGroupsForUserIfNeeded(final String user, final UserToGroupsFetcher fetcher) {
         if (cache.getExpiresInMs(user) >= REFRESH_WHEN_LESS_THAN_MS) {
             return;
         }
-        setGroupsForUser(user, fetcher.apply(user));
+        setGroupsForUser(user, fetcher.fetchGroups(user));
     }
 
     public void clear() {
         cache.clear();
+    }
+
+    public void setUserToGroupsFetcher(final UserToGroupsFetcher userToGroupsFetcher) {
+        this.userToGroupsFetcher = userToGroupsFetcher;
+    }
+
+    /** For testing */
+    public void makeUseless() {
+        if (userToGroupsFetcher != null && userToGroupsFetcher instanceof SystemUserGroupsFetcher) {
+            ((SystemUserGroupsFetcher) userToGroupsFetcher).makeUseless();
+        }
+        clear();
+    }
+
+    /** For testing */
+    public int getNumReconnects() {
+        if (userToGroupsFetcher != null && userToGroupsFetcher instanceof SystemUserGroupsFetcher) {
+            return ((SystemUserGroupsFetcher) userToGroupsFetcher).getNumReconnects();
+        }
+        return 0;
     }
 
 }
