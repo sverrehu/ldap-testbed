@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.PartialResultException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
@@ -28,11 +29,10 @@ public final class LocalManualTest {
     private static final Logger LOG = LoggerFactory.getLogger(LocalManualTest.class);
     private static final String PROPERTIES_FILE = System.getProperty("user.home") + "/.ldap-testbed.properties";
     private static final String GROUP_MEMBER_OF_FIELD = "memberOf";
-    private final String usernameToUniqueSearchFormat = "userPrincipalName=%s";
-    private LdapConnectionSpec ldapConnectionSpec;
+    private final String usernameToUniqueSearchFormat = "sAMAccountName=%s";
 
     private void doit(final LdapConnectionSpec connectionSpec, final String userDn, final char[] password) {
-        this.ldapConnectionSpec = connectionSpec;
+        LOG.info("Logging in as " + userDn);
         final LdapContext context = LdapUtils.connect(connectionSpec, userDn, password);
         if (context == null) {
             throw new RuntimeException("No LdapContext");
@@ -51,27 +51,58 @@ public final class LocalManualTest {
         final String filter = "(" + String.format(usernameToUniqueSearchFormat, LdapUtils.escape(username)) + ")";
         try {
             final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);
-            if (ne.hasMore()) {
-                final SearchResult sr = ne.next();
-                final Attributes attributes = sr.getAttributes();
-                if (attributes != null) {
-                    final Attribute attribute = attributes.get(GROUP_MEMBER_OF_FIELD);
-                    if (attribute != null) {
-                        final NamingEnumeration<?> allGroups = attribute.getAll();
-                        while (allGroups.hasMore()) {
-                            set.add(allGroups.next().toString());
-                        }
+            final Map<String, Map<String, List<String>>> attributes1 = getAttributes(ne);
+            for (final Map.Entry<String, Map<String, List<String>>> entry : attributes1.entrySet()) {
+                System.out.println(entry.getKey());
+                for (final Map.Entry<String, List<String>> entry2 : entry.getValue().entrySet()) {
+                    System.out.println("  " + entry2.getKey() + ": " + entry2.getValue().get(0));
+                    if (entry2.getKey().equalsIgnoreCase(GROUP_MEMBER_OF_FIELD)) {
+                        set.addAll(entry2.getValue());
                     }
                 }
-            }
-            if (ne.hasMore()) {
-                LOG.warn("Expected to find unique entry for \"" + filter + "\", but found several. Will not return any groups.");
-                set.clear();
             }
             return set;
         } catch (final NamingException e) {
             LOG.warn("Unable to fetch groups for \"" + username + "\". Will return no groups.", e);
             return Collections.emptySet();
+        }
+    }
+
+    private static Map<String, Map<String, List<String>>> getAttributes(final NamingEnumeration<SearchResult> ne) {
+        final Map<String, Map<String, List<String>>> results = new LinkedHashMap<>();
+        try {
+            while (ne.hasMore()) {
+                final SearchResult sr = ne.next();
+                results.put(sr.getNameInNamespace(), getAttributes(sr.getAttributes()));
+            }
+        } catch (final PartialResultException e) {
+            LOG.info("Ignoring PartialResultException: " + e.getMessage());
+        } catch (final NamingException e) {
+            throw new UncheckedNamingException(e);
+        }
+        return results;
+    }
+
+    private static Map<String, List<String>> getAttributes(final Attributes attributes) {
+        if (attributes == null) {
+            return Collections.emptyMap();
+        }
+        try {
+            final Map<String, List<String>> attributeMap = new LinkedHashMap<>();
+            final NamingEnumeration<? extends Attribute> ne = attributes.getAll();
+            while (ne.hasMore()) {
+                final ArrayList<String> valuesList = new ArrayList<>();
+                final Attribute attribute = ne.next();
+                final NamingEnumeration<?> values = attribute.getAll();
+                while (values.hasMore()) {
+                    valuesList.add(values.next().toString());
+                }
+                valuesList.sort(String::compareToIgnoreCase);
+                attributeMap.put(attribute.getID(), valuesList);
+            }
+            return attributeMap;
+        } catch (final NamingException e) {
+            throw new UncheckedNamingException(e);
         }
     }
 
@@ -81,7 +112,7 @@ public final class LocalManualTest {
             props.load(new FileReader(PROPERTIES_FILE));
             final String host = Objects.requireNonNull(props.getProperty("host"));
             final int port = Integer.valueOf(Objects.requireNonNull(props.getProperty("port")));
-            final boolean useTls = port == 636;
+            final boolean useTls = true;//port == 636;
             final String baseDn = Objects.requireNonNull(props.getProperty("baseDn"));
             final LdapConnectionSpec connectionSpec = new LdapConnectionSpec(host, port, useTls, baseDn);
             final String userDn = Objects.requireNonNull(props.getProperty("userDn"));
