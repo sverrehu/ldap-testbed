@@ -30,10 +30,12 @@ public final class SystemUserGroupsManualTest {
 
     private void doit(final LdapConnectionSpec connectionSpec, final String userDn, final String serviceUser, final char[] servicePassword) {
         final SystemUserGroupsFetcher groupsFetcher = new SystemUserGroupsFetcher(connectionSpec, serviceUser, servicePassword, GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat, 0);
-        final Set<String> groups = groupsFetcher.fetchGroups(userDn);
-        System.out.println("Groups for " + userDn + ":" + (groups.isEmpty() ? " None" : ""));
-        for (final String group : groups) {
-            System.out.println("  Group: " + group);
+        for (int q = 0; q < 3; q++) {
+            final Set<String> groups = groupsFetcher.fetchGroups(userDn);
+            System.out.println("Groups for " + userDn + ":" + (groups.isEmpty() ? " None" : ""));
+            for (final String group : groups) {
+                System.out.println("  Group: " + group);
+            }
         }
     }
 
@@ -43,14 +45,13 @@ public final class SystemUserGroupsManualTest {
             props.load(new FileReader(PROPERTIES_FILE, StandardCharsets.ISO_8859_1));
             final String host = Objects.requireNonNull(props.getProperty("host"));
             final int port = Integer.valueOf(Objects.requireNonNull(props.getProperty("port")));
-            final boolean useTls = port == 636;
+            final boolean useTls = true;//port == 636;
             final String baseDn = Objects.requireNonNull(props.getProperty("baseDn"));
             final LdapConnectionSpec connectionSpec = new LdapConnectionSpec(host, port, useTls, baseDn);
             final String userDn = Objects.requireNonNull(props.getProperty("userDn"));
             final String userPassword = Objects.requireNonNull(props.getProperty("password"));
             final String serviceUser = Objects.requireNonNull(props.getProperty("serviceUser"));
             final String servicePassword = Objects.requireNonNull(props.getProperty("servicePassword"));
-            System.out.println("Password \"" + servicePassword + "\"");
 //            new SystemUserGroupsManualTest().doit(connectionSpec, userDn, userDn, userPassword.toCharArray());
             new SystemUserGroupsManualTest().doit(connectionSpec, userDn, serviceUser, servicePassword.toCharArray());
         } catch (IOException e) {
