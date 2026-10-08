@@ -22,18 +22,23 @@ public final class LdapAuthenticateCallbackHandler
 implements AuthenticateCallbackHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(LdapAuthenticateCallbackHandler.class);
-    private static final String CONFIG_LDAP_HOST = "authn.ldap.host";
-    private static final String CONFIG_LDAP_PORT = "authn.ldap.port";
-    private static final String CONFIG_LDAP_BASE_DN = "authn.ldap.base.dn";
-    private static final String CONFIG_LDAP_USERNAME_TO_DN_FORMAT = "authn.ldap.username.to.dn.format";
-    private static final String CONFIG_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT = "authn.ldap.username.to.unique.search.format";
+    private static final String CONFIG_LDAP_HOST = "authz.ldap.host";
+    private static final String CONFIG_LDAP_PORT = "authz.ldap.port";
+    private static final String CONFIG_LDAP_BASE_DN = "authz.ldap.base.dn";
+    private static final String CONFIG_LDAP_USER_DN = "authz.ldap.user.dn";
+    private static final String CONFIG_LDAP_USER_PASSWORD = "authz.ldap.user.password";
+    private static final String CONFIG_LDAP_TIMEOUT_MS = "authz.ldap.timeout.ms";
+    private static final String CONFIG_LDAP_RETRIES = "authz.ldap.retries";
+    private static final String CONFIG_LDAP_USERNAME_TO_DN_FORMAT = "authz.ldap.username.to.dn.format";
+    private static final String CONFIG_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT = "authz.ldap.username.to.unique.search.format";
     private static final String SASL_PLAIN = "PLAIN";
+    private static final int DEFAULT_NUM_RETRIES = 0;
     private UsernamePasswordAuthenticator authenticator;
     private final UsernamePasswordAuthenticatorFactory usernamePasswordAuthenticatorFactory;
 
     public interface UsernamePasswordAuthenticatorFactory {
 
-        UsernamePasswordAuthenticator create(LdapConnectionSpec spec, String usernameToDnFormat, String usernameToUniqueSearchFormat);
+        UsernamePasswordAuthenticator create(LdapConnectionSpec spec, String usernameToDnFormat, String usernameToUniqueSearchFormat, String userDn, String userPassword, int numRetries);
 
     }
 
@@ -54,16 +59,25 @@ implements AuthenticateCallbackHandler {
     }
 
     private void configure(final Map<String, ?> configs) {
-        final String host = getRequiredStringProperty(configs, CONFIG_LDAP_HOST);
-        final int port = getRequiredIntProperty(configs, CONFIG_LDAP_PORT);
-        final String baseDn = getRequiredStringProperty(configs, CONFIG_LDAP_BASE_DN);
+        final LdapConnectionSpec connectionSpec = toLdapConnectionSpec(configs);
         final String usernameToDnFormat = getRequiredStringProperty(configs, CONFIG_LDAP_USERNAME_TO_DN_FORMAT);
         final String usernameToUniqueSearchFormat = getStringProperty(configs, CONFIG_LDAP_USERNAME_TO_UNIQUE_SEARCH_FORMAT);
-        authenticator = usernamePasswordAuthenticatorFactory.create(new LdapConnectionSpec(host, port, port == 636, baseDn), usernameToDnFormat, usernameToUniqueSearchFormat);
+        final String userDn = getStringProperty(configs, CONFIG_LDAP_USER_DN);
+        final String userPassword = getStringProperty(configs, CONFIG_LDAP_USER_PASSWORD);
+        final int numRetries = getIntProperty(configs, CONFIG_LDAP_RETRIES, DEFAULT_NUM_RETRIES);
+        authenticator = usernamePasswordAuthenticatorFactory.create(connectionSpec, usernameToDnFormat, usernameToUniqueSearchFormat, userDn, userPassword, numRetries);
         LOG.info("Configured.");
     }
 
-    private int getRequiredIntProperty(final Map<String, ?> configs, final String name) {
+    static LdapConnectionSpec toLdapConnectionSpec(final Map<String, ?> configs) {
+        final String host = getRequiredStringProperty(configs, CONFIG_LDAP_HOST);
+        final int port = getRequiredIntProperty(configs, CONFIG_LDAP_PORT);
+        final String baseDn = getRequiredStringProperty(configs, CONFIG_LDAP_BASE_DN);
+        final int timeoutMs = getIntProperty(configs, CONFIG_LDAP_TIMEOUT_MS, LdapConnectionSpec.DEFAULT_TIMEOUT_MS);
+        return new LdapConnectionSpec(host, port, port == 636, baseDn, timeoutMs);
+    }
+
+    private static int getRequiredIntProperty(final Map<String, ?> configs, final String name) {
         final String stringValue = getRequiredStringProperty(configs, name);
         try {
             return Integer.parseInt(stringValue);
@@ -72,12 +86,24 @@ implements AuthenticateCallbackHandler {
         }
     }
 
-    private String getStringProperty(final Map<String, ?> configs, final String name) {
+    private static int getIntProperty(final Map<String, ?> configs, final String name, final int defaultValue) {
+        final String stringValue = getStringProperty(configs, name);
+        if (stringValue == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(stringValue);
+        } catch (final NumberFormatException e) {
+            throw new IllegalArgumentException("Value must be numeric in configuration property \"" + name + "\".");
+        }
+    }
+
+    private static String getStringProperty(final Map<String, ?> configs, final String name) {
         final Object value = configs.get(name);
         return value == null ? null : value.toString();
     }
 
-    private String getRequiredStringProperty(final Map<String, ?> configs, final String name) {
+    private static String getRequiredStringProperty(final Map<String, ?> configs, final String name) {
         final Object value = configs.get(name);
         if (value == null) {
             throw new IllegalArgumentException("Missing required configuration property \"" + name + "\".");

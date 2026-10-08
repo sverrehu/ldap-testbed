@@ -1,18 +1,26 @@
 package no.shhsoft.kafka.auth;
 
+import no.shhsoft.ldap.LdapConnectionSpec;
 import no.shhsoft.security.UsernamePasswordAuthenticator;
 import org.apache.kafka.common.security.plain.PlainAuthenticateCallback;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.TextInputCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
@@ -22,9 +30,6 @@ public final class LdapAuthenticateCallbackHandlerTest {
     private static final String KNOWN_USERNAME = "user";
     private static final char[] KNOWN_PASSWORD = "password".toCharArray();
     private static final UsernamePasswordAuthenticator KNOWN_USERNAME_PASSWORD_AUTHENTICATOR = new AcceptOneUsernamePasswordAuthenticator();
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static final class AcceptOneUsernamePasswordAuthenticator
     implements UsernamePasswordAuthenticator {
@@ -43,9 +48,8 @@ public final class LdapAuthenticateCallbackHandlerTest {
 
     @Test
     public void shouldNotAcceptWrongSaslMechanism() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("SASL mechanism \"PLAIN\"");
-        kafkaCreateCallbackHandler(getWorkingConfigs(), "wrong");
+        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> kafkaCreateCallbackHandler(getWorkingConfigs(), "wrong"));
+        assertTrue(exception.getMessage().contains("SASL mechanism \"PLAIN\""));
     }
 
     @Test
@@ -65,44 +69,32 @@ public final class LdapAuthenticateCallbackHandlerTest {
                 }
                 nonWorkingConfigs.put(entry.getKey(), entry.getValue());
             }
-            exceptionRule.expect(IllegalArgumentException.class);
-            exceptionRule.expectMessage(expectedErrorSubstring);
-            kafkaCreateCallbackHandler(nonWorkingConfigs);
+            final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> kafkaCreateCallbackHandler(nonWorkingConfigs));
+            assertTrue(exception.getMessage().contains(expectedErrorSubstring));
         }
     }
 
     @Test
     public void shouldNotAcceptInvalidPortNumber() {
         final Map<String, Object> configs = getWorkingConfigs();
-        configs.put("authn.ldap.port", "foo");
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("must be numeric");
-        kafkaCreateCallbackHandler(configs);
+        configs.put("authz.ldap.port", "foo");
+        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> kafkaCreateCallbackHandler(configs));
+        assertTrue(exception.getMessage().contains("must be numeric"));
     }
 
     @Test
     public void shouldNotAcceptMissingUsernameCallback() {
         final LdapAuthenticateCallbackHandler callbackHandler = kafkaCreateCallbackHandler();
-        try {
-            exceptionRule.expect(IllegalStateException.class);
-            exceptionRule.expectMessage("NameCallback");
-            callbackHandler.handle(new Callback[] { getPasswordCallback(KNOWN_PASSWORD) });
-        } catch (final UnsupportedCallbackException e) {
-            throw new RuntimeException("Got unexpected exception.", e);
-        }
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> callbackHandler.handle(new Callback[]{getPasswordCallback(KNOWN_PASSWORD)}));
+        assertTrue(exception.getMessage().contains("NameCallback"));
         kafkaDestroyCallbackHandler(callbackHandler);
     }
 
     @Test
     public void shouldNotAcceptMissingPasswordCallback() {
         final LdapAuthenticateCallbackHandler callbackHandler = kafkaCreateCallbackHandler();
-        try {
-            exceptionRule.expect(IllegalStateException.class);
-            exceptionRule.expectMessage("PlainAuthenticationCallback");
-            callbackHandler.handle(new Callback[] { getUsernameCallback(KNOWN_USERNAME) });
-        } catch (final UnsupportedCallbackException e) {
-            throw new RuntimeException("Got unexpected exception.", e);
-        }
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> callbackHandler.handle(new Callback[]{getUsernameCallback(KNOWN_USERNAME)}));
+        assertTrue(exception.getMessage().contains("PlainAuthenticationCallback"));
         kafkaDestroyCallbackHandler(callbackHandler);
     }
 
@@ -113,7 +105,7 @@ public final class LdapAuthenticateCallbackHandlerTest {
             callbackHandler.handle(new Callback[] { new TextInputCallback("foo") });
             fail("Did not get expected exception.");
         } catch (final UnsupportedCallbackException e) {
-            assertTrue("Did not get expected exception.", e.getCallback() instanceof TextInputCallback);
+            assertInstanceOf(TextInputCallback.class, e.getCallback(), "Did not get expected exception.");
         }
         kafkaDestroyCallbackHandler(callbackHandler);
     }
@@ -161,6 +153,21 @@ public final class LdapAuthenticateCallbackHandlerTest {
         kafkaDestroyCallbackHandler(callbackHandler);
     }
 
+    @Test
+    public void shouldHaveDefaultTimeoutWhenNotGiven() {
+        final Map<String, Object> configs = getWorkingConfigs();
+        final LdapConnectionSpec connectionSpec = LdapAuthenticateCallbackHandler.toLdapConnectionSpec(configs);
+        assertEquals(LdapConnectionSpec.DEFAULT_TIMEOUT_MS, connectionSpec.getTimeoutMs());
+    }
+
+    @Test
+    public void shouldOverrideDefaultTimeoutWhenGiven() {
+        final Map<String, Object> configs = getWorkingConfigs();
+        configs.put("authz.ldap.timeout.ms", 6000);
+        final LdapConnectionSpec connectionSpec = LdapAuthenticateCallbackHandler.toLdapConnectionSpec(configs);
+        assertEquals(6000, connectionSpec.getTimeoutMs());
+    }
+
     private Callback getUsernameCallback(final String username) {
         return new NameCallback("prompt", username);
     }
@@ -178,7 +185,7 @@ public final class LdapAuthenticateCallbackHandlerTest {
     }
 
     private LdapAuthenticateCallbackHandler kafkaCreateCallbackHandler(final Map<String, Object> configs, final String saslMechanism) {
-        final LdapAuthenticateCallbackHandler callbackHandler = new LdapAuthenticateCallbackHandler((spec, usernameToDnFormat, usernameToUniqueSearchFormat) -> LdapAuthenticateCallbackHandlerTest.KNOWN_USERNAME_PASSWORD_AUTHENTICATOR);
+        final LdapAuthenticateCallbackHandler callbackHandler = new LdapAuthenticateCallbackHandler((spec, usernameToDnFormat, usernameToUniqueSearchFormat, userDn, userPassword, numRetries) -> LdapAuthenticateCallbackHandlerTest.KNOWN_USERNAME_PASSWORD_AUTHENTICATOR);
         callbackHandler.close();
         callbackHandler.configure(configs, saslMechanism, Collections.emptyList());
         return callbackHandler;
@@ -190,10 +197,10 @@ public final class LdapAuthenticateCallbackHandlerTest {
 
     private Map<String, Object> getWorkingConfigs() {
         final Map<String, Object> map = new LinkedHashMap<>();
-        map.put("authn.ldap.host", "localhost");
-        map.put("authn.ldap.port", 389);
-        map.put("authn.ldap.base.dn", "dc=example,dc=com");
-        map.put("authn.ldap.username.to.dn.format", "%s");
+        map.put("authz.ldap.host", "localhost");
+        map.put("authz.ldap.port", 389);
+        map.put("authz.ldap.base.dn", "dc=example,dc=com");
+        map.put("authz.ldap.username.to.dn.format", "%s");
         return map;
     }
 

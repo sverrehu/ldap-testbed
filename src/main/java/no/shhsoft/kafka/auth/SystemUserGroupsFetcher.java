@@ -19,25 +19,40 @@ implements UserToGroupsFetcher {
     private final char[] password;
     private final String groupMemberOfField;
     private final String usernameToUniqueSearchFormat;
+    private final int numRetries;
     private final Object contextLock = new Object();
     private LdapContext context;
     private int numReconnects;
 
-    SystemUserGroupsFetcher(final LdapConnectionSpec connectionSpec, final String userDn, final char[] password, final String groupMemberOfField, final String usernameToUniqueSearchFormat) {
+    SystemUserGroupsFetcher(final LdapConnectionSpec connectionSpec, final String userDn, final char[] password, final String groupMemberOfField, final String usernameToUniqueSearchFormat, final int numRetries) {
         this.connectionSpec = connectionSpec;
         this.userDn = userDn;
         this.password = password;
         this.groupMemberOfField = groupMemberOfField;
         this.usernameToUniqueSearchFormat = usernameToUniqueSearchFormat;
+        this.numRetries = numRetries;
     }
 
-    private LdapContext getContext() {
+    LdapContext getContext() {
         synchronized (contextLock) {
             if (context == null) {
-                context = LdapUtils.connect(connectionSpec, userDn, password);
+                context = LdapUtils.connectWithRetries(connectionSpec, userDn, password, numRetries);
                 ++numReconnects;
             }
             return context;
+        }
+    }
+
+    void discardContext() {
+        synchronized (contextLock) {
+            if (context != null) {
+                try {
+                    context.close();
+                } catch (final NamingException e) {
+                    LOG.debug("Got error when closing context", e);
+                }
+                context = null;
+            }
         }
     }
 
@@ -54,28 +69,10 @@ implements UserToGroupsFetcher {
                 return Collections.emptySet();
             }
             try {
-                return LdapUtils.findGroupsWithoutErrorHandling(ldapContext, username, groupMemberOfField, usernameToUniqueSearchFormat);
-            } catch (final NamingException e) {
-                LOG.info("Got NamingException. Retrying. " + e.getMessage());
-                try {
-                    ldapContext.close();
-                } catch (final Exception e2) {
-                    LOG.debug("Ignoring exception when closing LdapContext");
-                }
-                context = null;
-                return LdapUtils.findGroups(getContext(), username, groupMemberOfField, usernameToUniqueSearchFormat);
-            }
-        }
-    }
-
-    void makeUseless() {
-        synchronized (contextLock) {
-            if (context != null) {
-                try {
-                    context.close();
-                } catch (final NamingException e) {
-                    LOG.debug("Got error when closing context", e);
-                }
+                return LdapUtils.findGroupsWithRetries(ldapContext, username, groupMemberOfField, usernameToUniqueSearchFormat, numRetries);
+            } catch (final Exception e) {
+                discardContext();
+                throw new RuntimeException(e);
             }
         }
     }

@@ -1,10 +1,10 @@
 package no.shhsoft.kafka.auth;
 
-import kafka.security.authorizer.AclAuthorizer;
 import org.apache.kafka.common.acl.AccessControlEntryFilter;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.acl.AclPermissionType;
+import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
@@ -12,40 +12,26 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.server.authorizer.Action;
 import org.apache.kafka.server.authorizer.AuthorizableRequestContext;
 import org.apache.kafka.server.authorizer.AuthorizationResult;
+import org.apache.kafka.server.authorizer.Authorizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
 
-/**
- * NOTE!
- *
- * This class does not support DENY rules! It will call the original AclAuthorizer first, and
- * change any DENIED to ALLOWED if there is a group rule that ALLOWs access. This means that
- * a user that has explicitly been DENIED access, may gain access anyway, based on group
- * membership!
- *
- * The reason for this is that when we process the results of the original AclAuthorizer,
- * we do not know whether a DENIED is explicit or implicit, som we must assume the latter.
- *
- * Using explicit denies is a bad security practice anyway (blacklisting instead of whitelisting),
- * and we do not use that practice at our place.
- */
-public final class LdapGroupAclAuthorizer
-extends AclAuthorizer {
+final class AuthorizationResultOverrider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LdapGroupAclAuthorizer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorizationResultOverrider.class);
     private static final String GROUP_TYPE = "Group";
     private static final String GROUP_TYPE_AND_COLON = GROUP_TYPE + ":";
 
-    @Override
-    public List<AuthorizationResult> authorize(final AuthorizableRequestContext requestContext, final List<Action> actions) {
-        final List<AuthorizationResult> results = super.authorize(requestContext, actions);
+    private AuthorizationResultOverrider() {
+    }
+
+    public static void overrideForGroups(final Authorizer authorizer, final AuthorizableRequestContext requestContext, final List<AuthorizationResult> results, final List<Action> actions) {
         if (isOverridableContext(requestContext)) {
-            overrideResultsByGroup(requestContext, results, actions);
+            overrideResultsByGroup(authorizer, requestContext, results, actions);
         }
-        return results;
     }
 
     private static boolean isOverridableContext(final AuthorizableRequestContext context) {
@@ -60,7 +46,7 @@ extends AclAuthorizer {
         return protocol == SecurityProtocol.SASL_SSL || protocol == SecurityProtocol.SASL_PLAINTEXT;
     }
 
-    private void overrideResultsByGroup(final AuthorizableRequestContext requestContext, final List<AuthorizationResult> results, final List<Action> actions) {
+    private static void overrideResultsByGroup(final Authorizer authorizer, final AuthorizableRequestContext requestContext, final List<AuthorizationResult> results, final List<Action> actions) {
         final KafkaPrincipal principal = requestContext.principal();
         final Set<String> groupsForUser = UserToGroupsCache.getInstance().getGroupsForUser(principal.getName());
         if (groupsForUser == null || groupsForUser.isEmpty()) {
@@ -72,37 +58,44 @@ extends AclAuthorizer {
             if (originalResult == AuthorizationResult.ALLOWED) {
                 continue;
             }
-            final AuthorizationResult alternativeResult = authorize(groupsForUser, actions.get(q));
+            final Action action = actions.get(q);
+            final AuthorizationResult alternativeResult = authorize(authorizer, groupsForUser, action);
             if (alternativeResult != originalResult && (alternativeResult == AuthorizationResult.ALLOWED || alternativeResult == AuthorizationResult.DENIED)) {
                 results.set(q, alternativeResult);
-                LOG.info("*** Overriding " + originalResult + ", changing to " + alternativeResult + " due to matching group rule for \"" + principal + "\"");
+                LOG.info("*** Overriding " + originalResult + ", changing to " + alternativeResult + " due to matching group rule for \"" + principal + "\" on \"" + action.resourcePattern().name() + "\"");
             }
         }
     }
 
-    private AuthorizationResult authorize(final Set<String> groups, final Action action) {
+    private static AuthorizationResult authorize(final Authorizer authorizer, final Set<String> groups, final Action action) {
         final ResourcePattern resourcePattern = action.resourcePattern();
-        final ResourcePatternFilter resourcePatternFilter = new ResourcePatternFilter(resourcePattern.resourceType(), resourcePattern.name(), resourcePattern.patternType());
+        final ResourcePatternFilter resourcePatternFilter = new ResourcePatternFilter(resourcePattern.resourceType(), resourcePattern.name(), PatternType.MATCH);
         final AccessControlEntryFilter accessControlEntryFilter = new AccessControlEntryFilter(null, null, action.operation(), AclPermissionType.ANY);
         final AclBindingFilter aclBindingFilter = new AclBindingFilter(resourcePatternFilter, accessControlEntryFilter);
-        final Iterable<AclBinding> acls = acls(aclBindingFilter);
-        boolean hasSeenAllow = false;
+        final Iterable<AclBinding> acls = authorizer.acls(aclBindingFilter);
+        AuthorizationResult result = AuthorizationResult.DENIED;
         for (final AclBinding aclBinding : acls) {
+            if (!aclBindingFilter.matches(aclBinding)) {
+                LOG.warn("Got an ACL Binding that does not match the filter we provided. This should not happen.");
+                continue;
+            }
             if (isGroupMatch(groups, aclBinding)) {
+                /* The principal in the AclBinding is a Group-principal that matches a
+                 * group in which the calling principal is a member. */
                 final AclPermissionType permissionType = aclBinding.entry().permissionType();
                 if (permissionType == AclPermissionType.DENY) {
-                    /* There is a deny on a group to which the principal is a member. This wins. */
+                    /* There is a DENY on a group in which the principal is a member. This wins. */
                     return AuthorizationResult.DENIED;
                 }
                 if (permissionType == AclPermissionType.ALLOW) {
-                    hasSeenAllow = true;
+                    result = AuthorizationResult.ALLOWED;
                 }
             }
         }
-        return hasSeenAllow ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED;
+        return result;
     }
 
-    private boolean isGroupMatch(final Set<String> groups, final AclBinding aclBinding) {
+    private static boolean isGroupMatch(final Set<String> groups, final AclBinding aclBinding) {
         final String aclPrincipal = aclBinding.entry().principal();
         if (!aclPrincipal.startsWith(GROUP_TYPE_AND_COLON)) {
             return false;

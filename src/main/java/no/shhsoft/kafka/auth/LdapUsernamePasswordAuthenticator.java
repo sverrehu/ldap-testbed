@@ -31,11 +31,28 @@ implements UsernamePasswordAuthenticator {
     private final LdapConnectionSpec ldapConnectionSpec;
     private final String usernameToDnFormat;
     private final String usernameToUniqueSearchFormat;
+    private final boolean useUserContextForFetchingGroups;
+    private final int numRetries;
 
-    LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final String usernameToUniqueSearchFormat) {
+    public LdapUsernamePasswordAuthenticator(final LdapConnectionSpec ldapConnectionSpec, final String usernameToDnFormat, final String usernameToUniqueSearchFormat, final String userDn, final String userPassword, final int numRetries) {
         this.ldapConnectionSpec = Objects.requireNonNull(ldapConnectionSpec);
         this.usernameToDnFormat = Objects.requireNonNull(usernameToDnFormat);
         this.usernameToUniqueSearchFormat = usernameToUniqueSearchFormat;
+        if (!StringUtils.isBlank(userDn) && !StringUtils.isBlank(userPassword)) {
+            LOG.info("Will use LDAP service user \"" + userDn + "\" to look up groups.");
+            final SystemUserGroupsFetcher userToGroupsFetcher = new SystemUserGroupsFetcher(ldapConnectionSpec, userDn, userPassword.toCharArray(), GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat, numRetries);
+            UserToGroupsCache.getInstance().setUserToGroupsFetcher(userToGroupsFetcher);
+            useUserContextForFetchingGroups = false;
+            /* Connect to LDAP to get errors early. */
+            if (userToGroupsFetcher.getContext() == null) {
+                LOG.error("Unable to connect to LDAP server \"" + ldapConnectionSpec.getUrl() +  "\" as \"" + userDn
+                          + "\". Probably incorrect user or password. Group-based authorization will not work.");
+            }
+        } else {
+            LOG.info("No LDAP service user provided. Will use the authenticated user to look up groups.");
+            useUserContextForFetchingGroups = true;
+        }
+        this.numRetries = numRetries;
     }
 
     @Override
@@ -52,11 +69,11 @@ implements UsernamePasswordAuthenticator {
     }
 
     private boolean authenticateByDn(final String userDn, final char[] password, final String originalUsername) {
-        final LdapContext context = LdapUtils.connect(ldapConnectionSpec, userDn, password);
+        final LdapContext context = LdapUtils.connectWithRetries(ldapConnectionSpec, userDn, password, numRetries);
         if (context == null) {
             return false;
         }
-        if (!StringUtils.isBlank(usernameToUniqueSearchFormat) && originalUsername != null) {
+        if (useUserContextForFetchingGroups && !StringUtils.isBlank(usernameToUniqueSearchFormat) && originalUsername != null) {
             populateGroups(context, originalUsername);
         }
         try {
@@ -72,40 +89,8 @@ implements UsernamePasswordAuthenticator {
             if (!s.equals(username)) {
                 LOG.warn("Expected \"" + username + "\", but got \"" + s + "\"");
             }
-            return findGroups(context, username);
+            return LdapUtils.findGroupsWithRetries(context, username, GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat, numRetries);
         });
-    }
-
-    private Set<String> findGroups(final LdapContext ldap, final String username) {
-        final Set<String> set = new HashSet<>();
-        final SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        sc.setReturningAttributes(new String[] { GROUP_MEMBER_OF_FIELD });
-        final String filter = "(" + String.format(usernameToUniqueSearchFormat, LdapUtils.escape(username)) + ")";
-        try {
-            final NamingEnumeration<SearchResult> ne = ldap.search("", filter, sc);
-            if (ne.hasMore()) {
-                final SearchResult sr = ne.next();
-                final Attributes attributes = sr.getAttributes();
-                if (attributes != null) {
-                    final Attribute attribute = attributes.get(GROUP_MEMBER_OF_FIELD);
-                    if (attribute != null) {
-                        final NamingEnumeration<?> allGroups = attribute.getAll();
-                        while (allGroups.hasMore()) {
-                            set.add(allGroups.next().toString());
-                        }
-                    }
-                }
-            }
-            if (ne.hasMore()) {
-                LOG.warn("Expected to find unique entry for \"" + filter + "\", but found several. Will not return any groups.");
-                set.clear();
-            }
-            return set;
-        } catch (final NamingException e) {
-            LOG.warn("Exception while fetching groups for \"" + username + "\". Will return no groups.", e);
-            return Collections.emptySet();
-        }
     }
 
 }

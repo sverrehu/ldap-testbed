@@ -29,7 +29,7 @@ public final class SystemUserGroupsManualTest {
     private final String usernameToUniqueSearchFormat = "userPrincipalName=%s";
 
     private void doit(final LdapConnectionSpec connectionSpec, final String userDn, final String serviceUser, final char[] servicePassword) {
-        final SystemUserGroupsFetcher groupsFetcher = new SystemUserGroupsFetcher(connectionSpec, serviceUser, servicePassword, GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat);
+        final SystemUserGroupsFetcher groupsFetcher = new SystemUserGroupsFetcher(connectionSpec, serviceUser, servicePassword, GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat, 0);
         final Set<String> groups = groupsFetcher.fetchGroups(userDn);
         System.out.println("Groups for " + userDn + ":" + (groups.isEmpty() ? " None" : ""));
         for (final String group : groups) {
