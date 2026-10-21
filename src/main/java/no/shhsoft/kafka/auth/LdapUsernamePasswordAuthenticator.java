@@ -1,6 +1,7 @@
 package no.shhsoft.kafka.auth;
 
 import no.shhsoft.ldap.LdapConnectionSpec;
+import no.shhsoft.ldap.LdapContextProvider;
 import no.shhsoft.ldap.LdapUtils;
 import no.shhsoft.security.UsernamePasswordAuthenticator;
 import no.shhsoft.utils.StringUtils;
@@ -22,7 +23,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:shh@thathost.com">Sverre H. Huseby</a>
  */
-final class LdapUsernamePasswordAuthenticator
+public final class LdapUsernamePasswordAuthenticator
 implements UsernamePasswordAuthenticator {
 
     private static final Logger LOG = LoggerFactory.getLogger(LdapUsernamePasswordAuthenticator.class);
@@ -89,7 +90,16 @@ implements UsernamePasswordAuthenticator {
             if (!s.equals(username)) {
                 LOG.warn("Expected \"" + username + "\", but got \"" + s + "\"");
             }
-            return LdapUtils.findGroupsWithRetries(context, username, GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat, numRetries);
+            return LdapUtils.findGroupsWithRetries(new LdapContextProvider() {
+                @Override
+                public LdapContext getContext() {
+                    return context;
+                }
+
+                @Override
+                public void discardContext() {
+                }
+            }, username, GROUP_MEMBER_OF_FIELD, usernameToUniqueSearchFormat, numRetries);
         });
     }
 
